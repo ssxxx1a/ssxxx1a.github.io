@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Capsule-related_resources</title>
+    <url>/2020/02/25/Capsule-related-resources/</url>
+    <content><![CDATA[<h1 id="some-sources-of-capsNet"><a href="#some-sources-of-capsNet" class="headerlink" title="some sources of capsNet"></a>some sources of capsNet</h1><h2 id="article"><a href="#article" class="headerlink" title="article"></a>article</h2><ol>
+<li><a href="https://jhui.github.io/2017/11/03/Dynamic-Routing-Between-Capsules/" target="_blank" rel="noopener">https://jhui.github.io/2017/11/03/Dynamic-Routing-Between-Capsules/</a></li>
+<li><a href="https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsule-networks-part-i-intuition-b4b559d1159b" target="_blank" rel="noopener">https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsule-networks-part-i-intuition-b4b559d1159b</a></li>
+<li><a href="https://hackernoon.com/capsule-networks-are-shaking-up-ai-heres-how-to-use-them-c233a0971952" target="_blank" rel="noopener">https://hackernoon.com/capsule-networks-are-shaking-up-ai-heres-how-to-use-them-c233a0971952</a></li>
+<li><a href="https://kndrck.co/posts/capsule_networks_explained/" target="_blank" rel="noopener">https://kndrck.co/posts/capsule_networks_explained/</a></li>
+<li><a href="https://becominghuman.ai/understand-and-apply-capsnet-on-traffic-sign-classification-a592e2d4a4ea" target="_blank" rel="noopener">https://becominghuman.ai/understand-and-apply-capsnet-on-traffic-sign-classification-a592e2d4a4ea</a></li>
+<li><a href="https://pechyonkin.me/capsules-4/" target="_blank" rel="noopener">https://pechyonkin.me/capsules-4/</a></li>
+<li><a href="https://gebob19.github.io/capsule-networks/?fbclid=IwAR0BP0CnGGfV3lv2IsrTTSrKQRu5FhL9RI1vi1tyAHwKtzhuyqW3gazOMM0" target="_blank" rel="noopener">https://gebob19.github.io/capsule-networks/?fbclid=IwAR0BP0CnGGfV3lv2IsrTTSrKQRu5FhL9RI1vi1tyAHwKtzhuyqW3gazOMM0</a></li>
+</ol>
+<h2 id="discuss-group"><a href="#discuss-group" class="headerlink" title="discuss group"></a>discuss group</h2><ol>
+<li><a href="https://www.facebook.com/groups/1830303997268623" target="_blank" rel="noopener">https://www.facebook.com/groups/1830303997268623</a></li>
+<li>Quora: <a href="https://www.quora.com/Could-GANs-work-with-Hintons-capsule-theory" target="_blank" rel="noopener">https://www.quora.com/Could-GANs-work-with-Hintons-capsule-theory</a></li>
+</ol>
+]]></content>
+      <categories>
+        <category>capsNet</category>
+      </categories>
+  </entry>
+  <entry>
+    <title>Collaborative Spatiotemporal Feature Learning for Video Action Recognition</title>
+    <url>/2020/04/09/CoST/</url>
+    <content><![CDATA[<h4 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h4><p>目前的方法基本来说，不是分别学习空间和时间特征（C2D）就是与无拘束的参数（C3D）一起学习。 本文作者提出的一个operation，通过可学习的weigth-sharing 约束来encode 协同编码时空特征。 <strong>特别的</strong>  沿着体积视频数据的三个正交视图执行2D卷积，其分别学习空间外观和时间运动信息。 由于共享不同视角（坐标系视角）的卷积核参数，可以同时学习空间与时间的协同相关性，所以有利于提升性能。此外，通过不同视角的学习系数，可以量化空间与时间特征的作用。</p>
+<a id="more"></a>
+<h4 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h4><p>视频动作的重点在于，spatiotemporal feature的学习，即如何表示时空呢？ spatial feature 主要描述动作中涉及到的objects的外表与每一帧之中的场景结构。</p>
+<p>由于spatial feature近似与image识别，所以可以通过CNN直接提取。</p>
+<p>temporal feature 可以获取随时间变化的frames中的motion cues</p>
+<p>所以就有两个问题：</p>
+<ol>
+<li>如何学习temporal feature？</li>
+<li>如何很好的聚合spatial feature和temporal feature</li>
+</ol>
+<p>所以之前的研究</p>
+<p>第一个想法就是，model temporal feature information 以及并行输入spatial inforamtion， 即two stream 思路。将原始frame和相邻帧的optical flow整合在一起作为输入。</p>
+<p>第二个想法就是，使用3D CNN（C3D）这样的话，spatial feature 和temporal feature是绑定在一起共同学习的。但是C3D的计算量是很大的问题。</p>
+<p>论文提出的方法：Collaborative SpatioTemporal (CoST) 的特征学习操作，可以通过权值共享约束来学习时空信息。给定一个3D video tensor，可以将其挤压成2D image 通过不同的视角。</p>
+<p>如下图所示：</p>
+<p><img src="/2020/04/09/CoST/Cost_figure1.png" alt="figure1" style="zoom:50%;"></p>
+<p>上图中的H-W是人类的natural view，该图像的随时间变化图可以让我们很好理解。 虽然T-W 和T-H 对于人类来说很难理解，但其中包含的信息量与W-H相同。</p>
+<p>更重要的是，丰富的motion information是嵌入在每一帧之中，而不是相邻帧。因此T-W和T-H的帧上的2D CNN 可以捕获到时间information。</p>
+<p>尤其有一点，不同view的卷积核共享由于以下几个原因：</p>
+<ol>
+<li>不同view的可视化图是compatible（兼容的？）eg：T-H和T-W也有共同spatial pattern，比如边缘和颜色斑点。因此相同的卷积核 集合可以适用于不同view。</li>
+<li>没有剪枝的C2D本身就有内在冗余。而冗余核可以通过权值共享的方式进行时间特征学习。</li>
+<li>大量减少参数可以提升速度与防止过拟合。此外，使用静态图像的时间特征学习（很ok的网络架构和预训练）可以很简单的迁移至时间域。</li>
+</ol>
+<p>不同view的互补的特征可以通过weight summation来进行聚合。</p>
+<p>Cost相比较于C2D，可以学习到时空特征，同时相比较于3D，又是基于2D 来进行实现的。Cost是介于2D和3D之间的方法了，其作为聚合C2D同时有C3D的表征能力。主要贡献如下：</p>
+<ol>
+<li>提出Cost，使用2D 卷积来进行协同学习时空特征。</li>
+<li>首次对时间特征与空间特征重要性进行量化分析</li>
+<li>超过C3D一类的model，sota效果。</li>
+</ol>
+<h4 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h4><ol>
+<li>hand-crafted：STIP，SIFT-3D、Spatiotemporal SIFT、3D Histogram of Gradient、iDT</li>
+<li>two stream：optical flow + visual frames</li>
+<li>sequence CNN： LSTM、ConvLSTM等</li>
+<li>C3D：C3D、P3D、（2+1）D、LGD</li>
+<li>closely model： Slicing CNN </li>
+</ol>
+<h4 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h4><p><a href="https://zhuanlan.zhihu.com/p/111704731" target="_blank" rel="noopener">Cost转载该知乎</a></p>
+<p><strong>CoST:</strong></p>
+<p>(1)下图对比CoST操作和C3D(3×3×3) 和C3D(3×1×1),C3D(3×3×3)利用3D卷积把时间和空间特征联合提取出来，C3D(3×1×1)首先用的卷积提取时间上的特征，然后用(1×3×1)的卷积提取空间特征。作者用3个3×3的2D卷积核从三个视角分别进行卷积操作，然后通过加权求和将三个特征图进行融合，需要注意的是，这里三个卷积核参数是共享的。</p>
+<p><img src="/2020/04/09/CoST/figure2.png" style="zoom:50%;"></p>
+<p>(2)输入的的X是T×H×W×C1，C是输入特征的通道，三个视角的卷积操作可以表示为：</p>
+<p><img src="/2020/04/09/CoST/figure1.png" style="zoom:50%;"></p>
+<p>其中⊗表示3D卷积操作，w是增加一个维度的三个视角的共享参数。</p>
+<p>这里的卷积可以理解为：对于H-W视角，把H-W看做一个平面，T看做是平面的堆叠，其中每一个平面有C1个通道。如果单独的看一个平面，只对一个平面进行卷积操作，则卷积核的大小为C1<em>3</em>3，卷积结果大小为H×W。从视角出发，共有T个这样的平面，则所用的平面进行卷积之后，大小为T×H×W。因为一共用C2个卷积核，所以经过卷积之后特征图的大小为T×H×W×C2.上述的公式中忽略了平面的通道数C1.</p>
+<p>Tips:这里有个问题，关于维度呢，H-W看作T个堆叠，那么H-T就要看做W个堆叠，卷积计算维度对的上吗？</p>
+<p>得到三个视角的特征后，对其进行加权求和得到该层的最终输出：</p>
+<p><img src="/2020/04/09/CoST/figure3.png" style="zoom:50%;"></p>
+<p>α=[αhw,αtw,αth],其中α是一个C2×3大小的矩阵，其中3表示三个视角，C2表示得到特征图的通道数。为了避免从多个视图得到的响应发生巨大的爆炸，用softmax对α进行归一化处理。</p>
+<p>(3)作者设计两种CoST结构，如图所示：</p>
+<p><img src="/2020/04/09/CoST/figure4.png" style="zoom:50%;"></p>
+<p>其中系数α被认为是模型参数的一部分，在训练的时候，反向传播进行更新。当进行识别的时候参数是固定的。</p>
+<p><strong>CoST(b):</strong> </p>
+<p><img src="/2020/04/09/CoST/figure5.png" style="zoom:50%;"></p>
+<p>系数α是基于特征被网络预测得到的，这个设计灵感来源于self-attention。每个样本的系数值取决于样本自己。首先用全局pooling将三个视角的特征pooling为1<em>1</em>1，然后用1*1×1的卷积核进行卷积，这里的参数是共享的，接下来拼接在一起然后送入到全连接层，最后用softmax进行归一化处理。</p>
+<h4 id="Connection-to-C2D-and-C3D"><a href="#Connection-to-C2D-and-C3D" class="headerlink" title="Connection to C2D and C3D"></a>Connection to C2D and C3D</h4><p>如果T-W和T-H值为0，那么相当于2D CNN。</p>
+<p>3D 卷积包含 $ k^3 $ 的参数，同时其感受野区域为 $ k^3 $ 其中 $ k $ 为卷积核大小。同样的，CoST包含的感受野区域为 $ 3k^3-3k+1 $  (消除掉边角部分)如图所示：</p>
+<p><img src="/2020/04/09/CoST/figure6.png" style="zoom:50%;"></p>
+<h4 id="Ablation-Study"><a href="#Ablation-Study" class="headerlink" title="Ablation Study"></a>Ablation Study</h4><ol>
+<li>没有weights shared 的效果更差，约1%的误差</li>
+<li>C3D 一直比C2D好，同时CoST比C3D好，如下图所示：</li>
+</ol>
+<p><img src="/2020/04/09/CoST/figure7.png" style="zoom:50%;"></p>
+<p>与sota的方法对比，其中对输入的temporal 进行修改。</p>
+<p><img src="/2020/04/09/CoST/figure8.png" style="zoom:50%;"></p>
+<h4 id="Importance-of-Defferent-Views"><a href="#Importance-of-Defferent-Views" class="headerlink" title="Importance of Defferent Views"></a>Importance of Defferent Views</h4><p>通过研究学习系数的大小，我们能够量化不同view的贡献。具体来说，对于每一CoST的层，在验证集上计算每个视图的平均系数。H-W视图的平均系数衡量的是外观特征的重要性，而T-W和T-H视图的平均系数衡量的是时间运动线索的重要性。</p>
+<p>通过计算各个view的CoST layers的平均系数，则可以量化其重要性，其中在Moments in Time数据集上H-W、T-W、T-H分别是0.67，0.14，0.19，在Kinetics上为0.77，0.08，0.15.所以可以了解到，其中spatial feature占主导成分。</p>
+<p><img src="/2020/04/09/CoST/figure9.png" style="zoom:50%;"></p>
+<p>该图为对应的量化贡献，可以看到随着越后面的层次，其temporal feature逐渐越来越重要，所以其实有一个初步理解，在实现过程中，temporal的表示，在high-level要比low-level要强。</p>
+<p>同时关于不同的action ，时间序列信息的重要性也不同，比如landing中temporal的重要性就要比interviewing高。</p>
+<h4 id="Discussion-and-Conclusion"><a href="#Discussion-and-Conclusion" class="headerlink" title="Discussion and Conclusion"></a>Discussion and Conclusion</h4><ol>
+<li>是否有更好的时间信息表示的方法呢？比如将时间信息投射到比如depth的spatial dims上？</li>
+<li>在图一种到不同view，如何学习其中的协同信息？</li>
+<li>本文提出的方法，其通过设计好的网络结构和weights share可以共享不同view之间的信息。在物理学中，Minkowski spacetime 表示，3维空间和1维时间能够统一为一个4维度连续体。本文的发现或许一定程度上可以解释表征学习带有上下文信息的时空模型。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>C3D</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>FOTS,Fast Oriented Text Spotting with a Unified Network</title>
+    <url>/2020/02/28/FOTS/</url>
+    <content><![CDATA[<h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>自然场景下的文本定位是被认为是文档分析领域中最困难和最有价值的挑战之一。现有的大多数方法都将文本检测和识别作为单独的任务。在这项工作中，我们提出了一个统一的端到端可训练的快速定向文本定位(FOTS)网络，用于同时检测和识别，在两个互补的任务之间共享计算和视觉信息。特别地，RoIRotate被引入来共享定义和识别之间的卷积特征。得益于卷积的权值共享，我们的FOTS与baseline的文本检测网络相比，计算cost更小，并且联合（detection和recognition）训练方法学习了更多的通用特征，使我们的方法比这two-stage方法表现得更好。实验于ICDAR2015，ICDAR2017 MLT和ICDAR2013数据集，表现出的结果是该方法可以得到sota的效果，同时可以作为real-time的系统的模型。最终效果是比ICDAR2015 text spotting task acc高5%，同时有22.6fps的速度。<br><a id="more"></a><br><img src="/2020/02/28/FOTS/figure1.png" alt="figure1"></p>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>在自然图像中阅读文本，因其在文档分析、场景理解、机器人导航和图像检索等方面的大量实际应用，越来越受到计算机视觉界的关注[49、43、53、44、14、15、34]。 虽然已有的研究在文本检测和文本识别两方面都取得了很大的进展，但由于文本模式的多样性和背景的复杂性，文本识别仍然具有一定的挑战性。</p>
+<p>场景文本阅读中最常见的方法是将场景文本分为文本检测和文本识别两部分，并将其作为两个独立的任务进行处理[20,34]。基于深度学习的方法在这两方面都占主导地位。在文本检测中，通常使用卷积神经网络从场景图像中提取特征图，然后使用不同的解码器对区域进行解码[49,43,53]。而在文本识别中，序列预测网络是在文本区域上逐个进行的[44,14]。这将导致大量的时间开销，特别是对于带有大量文本区域的图像。另一个问题是它忽略了检测和识别过程中视觉线索的相关性。单个检测网络不能由文本识别的标签进行监督，反之亦然。</p>
+<p>在本文中，我们建议同时考虑文本检测和识别。该方法实现了面向文本的快速定位系统(FOTS)。与之前的两阶段文本识别相比，我们的方法通过卷积神经网络学习更多的通用特征，这些特征在文本检测和文本识别之间是共享的，并且这两个任务的监督是互补的。由于特征提取通常花费大部分时间，因此它将计算缩小到单个检测网络，如图1所示。ROIRotate是连接检测和识别的关键，它根据面向检测的边界框从特征图中获得适当的特征。</p>
+<p><img src="/2020/02/28/FOTS/figure2.png" alt="avatar"></p>
+<p>网络结构如figure 2所示，先由<strong>shared convolutions</strong>提取特征。在特征图的基础上，建立基于全卷积网络的面向文本检测分支，预测检测边界框。RoIRotate操作符从特征图中提取与检测结果对应的文本正特征。然后将文本建议特征输入递归神经网络(RNN)Encode和(CTC)decode [9]进行文本识别。由于网络中的所有模块都是可微<strong>（可bp）</strong>的，因此整个系统可以端到端的训练。据我们所知，这是第一个面向文本检测和识别的端到端的可训练框架。我们发现，不需要复杂的后处理和超参数调整，网络可以很容易地进行训练。</p>
+<p>贡献如下：</p>
+<p>1.我们提出了一个端到端的可训练框架，用于快速定向文本定位。通过共享卷积特征，网络可以同时检测和识别文本，同时减少了计算量，提高了实时性。</p>
+<p>2.介绍了一种新的可微算子RoIRotate，用于从卷积特征图中提取面向文本区域。该操作将文本检测和识别统一到一个端到端pipline中。</p>
+<p>3.没有附加的花里胡哨，FOTS在许多文本检测和文本定位基准上显著地超越了最先进的方法，包括ICDAR 2015[26]、ICDAR 2017 MLT[1]和ICDAR 2013[27]。</p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>文本定位是计算机视觉和文档分析中的一个活跃课题。在这一节中，我们将简要介绍相关的工作，包括文本检测、文本编码和文本识别方法。</p>
+<h4 id="Text-Detection"><a href="#Text-Detection" class="headerlink" title="Text Detection"></a>Text Detection</h4><p>大多数传统的文本检测方法都将文本视为字符的组合。这些基于字符的方法首先本地化图像中的字符，然后将它们组合为单词或文本行。</p>
+<p>基于滑动窗口的方法[22,28,3,54]和基于连接组件的方法[18,40,2]是传统方法中有代表性的两类。近年来，有许多基于深度学习的方法来直接检测图像中的单词。</p>
+<p>～<strong>pass</strong></p>
+<h4 id="text-recognition"><a href="#text-recognition" class="headerlink" title="text recognition"></a>text recognition</h4><p>一般情况下，场景文本识别目的是从规则crop<strong>（crop出image中的text部分）</strong>但是不定长的text image中decode一个label序列。以前的大多数方法[8,30]捕获单个字符，然后对错误分类的字符进行细化。除了字符级方法外，近年来的文本区域识别方法可分为三类:基于单词分类的方法、基于序列到标签解码的方法和基于序列到序列模型的方法。</p>
+<p>Jaderberg[19]等人提出单词识别问题是一个传统的多类分类任务，有大量的类标签(大约90K个单词)。Su et.al[48] 提出方法是帧文本识别是一个序列标记问题，其中RNN基于HOG特征，采用CTC作为解码器。Shi等人[44]和He等人[14]提出了深度递归模型对max-out CNN特征进行编码，并采用CTC对编码序列进行解码。Fujii等人提出了一种编码器和summarizer网络来生成CTC的输入序列。Lee等人使用基于注意力的序列-序列结构自动聚焦于提取的CNN特征，并隐式学习RNN中包含的字符级语言模型。为了处理不规则输入图像，Shi等人[45]和Liu等人[37]引入空间注意机制，将扭曲的文本区域转换为适合识别的规则姿态。</p>
+<h4 id="text-spotting"><a href="#text-spotting" class="headerlink" title="text spotting"></a>text spotting</h4><p>大多数以前的文本识别方法首先使用文本检测模型生成文本建议，然后使用单独的文本识别模型识别它们。Jaderberg[20]等人首先使用集成模型生成高召回率的整体文本建议，然后使用单词分类器进行单词识别。Gupta等人[10]训练了一个全卷积回归网络用于文本检测，并采用[19]中的单词分类器进行文本识别。Liao等人使用基于SSD[36]的文本检测方法和CRNN[44]的文本识别方法。</p>
+<p>最近，Li等人提出了一种端到端的文本点对点方法，该方法利用受RPN[41]启发的文本建议网络进行文本检测，并利用LSTM的注意机制进行文本识别[38,45,3]。<strong>我们的方法有两个优势相比较于之前的方法</strong>:</p>
+<p>1.我们引入了RoIRotate方法，同时使用不同的文本检测法方法来解决更为复杂的情况，而他们的方法只能解决垂直文本。</p>
+<p>2.该method在效果与速度上都要好得多，特别的，几乎没有cost的步骤保证我们可以允许在于实时系统。在600*800的图像中，运行时间为900ms。</p>
+<h3 id="Methodology"><a href="#Methodology" class="headerlink" title="Methodology"></a>Methodology</h3><p>FOTS是一个端到端的可训练框架，它可以实时地检测和识别自然场景图像中的所有单词。它由四个部分组成:共享卷积、文本检测分支、RoIRotate操作和文本识别分支。</p>
+<h4 id="Overall-Architecture"><a href="#Overall-Architecture" class="headerlink" title="Overall Architecture"></a>Overall Architecture</h4><p>架构如<strong>figure2 figture3</strong>.</p>
+<p><img src="/2020/02/28/FOTS/figure3.png" alt="avator"></p>
+<p>共享网络工作的backbone是resnet-50[12]。受FPN[35]的启发，我们将低层特征映射和高层语义特征映射串联起来。共享卷积产生的特征图的分辨率是输入图像的1/4。文本检测分支使用共享卷积产生的特征输出 dense的逐像素预测。通过detection branch提取的text region proposals 。使用RoIRotate翻转相关共享特征到fixed-height 关系同时保持原有的高宽比。最后，text recognition branch 识别在这些region proposals。 CNN和LSTM被适用于encode 文本序列信息，采用CTC来进行decode。网络结构在<strong>table1</strong> 。</p>
+<p><img src="/2020/02/28/FOTS/table1.png" alt="avator"></p>
+<h4 id="Text-Detection-Branch"><a href="#Text-Detection-Branch" class="headerlink" title="Text Detection Branch"></a>Text Detection Branch</h4><p>受到[53,15]的启发，我们采用全卷积网络作为文本检测器。由于在自然场景图像中有大量的小文本框，所以我们在共享卷积中对原输入图像的1/32到1/4大小的feature maps进行了提升。在提取出共享特征后，一个 卷积层输出密集的每像素单词预测。第一个通道计算每个像素为正样本的概率。与[53]类似，原始文本区域缩小后的像素被认为是postive的。对于每个positive sample，以下4个通道分别预测其到包含该像素的包围盒的顶、底、左、右的距离，最后一个通道预测相关包围盒的方向。最后的检测结果是通过对这些postive sample应用阈值和NMS得到的。</p>
+<p>在我们的实验中，我们观察到许多类似于文字笔画的模式是很难分类的，如栅栏、网格等。我们应用了online hard example mining（OHEM）方法来更好的区分这些patten(和栅栏、网格类似的等与文本样子较为类似的). 该方法将F-measure提升了2%在ICDAR 2015中。detection branch 的loss 由文本分类项和边界框回归项两部分组成。文本分类项可以看做为下采样的score map 中的pixel-wise的分类loss。只有缩小后的原始文本区域被认为是positive area，而边界框与缩小后的文本之间的区域被认为是<strong>“NOT CARE”</strong>的区域，不会对分类造成损失。</p>
+<p><img src="/2020/02/28/FOTS/figure4.png" alt="avator"></p>
+<p>注意这个通过OHEM选择出来的positive elemens在score map标记为 <strong>$\Omega$</strong> ,对应的loss function可以定义为:</p>
+<script type="math/tex; mode=display">
+\begin{aligned} L_{\mathrm{cls}} &=\frac{1}{|\Omega|} \sum_{x \in \Omega} \mathrm{H}\left(p_{x}, p_{x}^{*}\right) =\frac{1}{|\Omega|} \sum_{x \in \Omega}\left(-p_{x}^{*} \log p_{x}-\left(1-p_{x}^{*}\right) \log \left(1-p_{x}\right)\right) \end{aligned} (1)</script><p>其中$|.|$ 是一个集合的元素个数。$\mathrm{H}(p_x, p^<em>_x)$ 代表score map的预测值: $p_x$ 和binary label<strong>(是否有text)</strong>  $p^</em>_x$ 的cross entorpy loss  </p>
+<p>作为回归loss，应用了IoU loss[52] 和rotation nagle loss [53]，其对object的shape scale 和orientation之间的差异都有较好的rebust.</p>
+<script type="math/tex; mode=display">
+L_{\mathrm{reg}}=\frac{1}{|\Omega|} \sum_{x \in \Omega} \operatorname{IoU}(y,x)+\lambda_{\theta}(1-\cos (\theta_x, \theta_x^*))   (2)</script><p>此处的 $\operatorname{IoU}(\mathbf{R}_x, \mathbf{R}_x^<em>)$ 是预测的bbox  $R_x$ 和ground truth $R^</em>_x$ 的IoU loss. 第二项是rotation angle loss， $\theta_x$ 和 $\theta^*_x$ 分别表示预测的orientation和ground truth.设置超参数$\lambda_{\theta}$为10在实验中，因此总的detection loss可以写为</p>
+<script type="math/tex; mode=display">
+L_{\mathrm{detect}}=L_{\mathrm{cls}}+{\lambda_{\mathrm{reg}}L_{\mathrm{reg}}} (3)</script><script type="math/tex; mode=display">
+L_{\mathrm{reg}}=\frac{1}{|\Omega|} \sum_{x \in \Omega} \operatorname{IoU}(\mathbf{R}_x,\mathbf{R}^*_x)</script><p>超参数$\lambda_{reg}$ 平衡两个loss，在实验中设置为1.</p>
+<h4 id="RoIRotate"><a href="#RoIRotate" class="headerlink" title="RoIRotate"></a>RoIRotate</h4><p>RoIRotate对oriented的特征区域进行变换，得到axis-aligned的特征图，如<strong>Figure 4所示</strong>，在这项工作中，我们固定输出高度，并保持长宽比不变，以处理文本长度的变化。相比较于RoI pooling和RoIAlign，RoIRotate 提供一种更为通用的操作，用于提取感兴趣区域的特征。同时我们与RRPN中提出的RRoI池进行了比较。RRoI池通过max-pooling将旋转后的区域转化为固定大小的区域，同时我们使用双线性插值来计算输出的值。该操作避免了RoI与提取的特征之间的不匹配，并且使得输出特征的长度可变，更适合于文本识别。</p>
+<p>该process可以分为两个步骤：</p>
+<p>1.仿射变换参数可通过预测或者text proposals的ground truth的坐标计算。</p>
+<p>2.然后分别对每个区域的共享特征映射进行仿射变换，得到文本区域的正则水平特征映射。</p>
+<p>第一步的公式如下<strong>（做仿射变换的过程，其实就是将斜或者怎不规则的文字区域矫正为规则的，对其坐标做仿射变换）</strong>:</p>
+<script type="math/tex; mode=display">
+t_x=l * \cos \theta-t * \sin \theta-x (4)</script><script type="math/tex; mode=display">
+t_{y}=t * \cos \theta+l * \sin \theta-y(5)</script><script type="math/tex; mode=display">
+s=\frac{h_{t}}{t+b}(6)</script><script type="math/tex; mode=display">
+w_t=s *(l+r)          (7)</script><script type="math/tex; mode=display">
+\begin{aligned} \mathbf{M} &=\left[\begin{array}{ccc}\cos \theta & -\sin \theta & 0 \\ \sin \theta & \cos \theta & 0 \\ 0 & 0 & 1\end{array}\right]\left[\begin{array}{ccc}s & 0 & 0 \\ 0 & s & 0 \\ 0 & 0 & 1\end{array}\right]\left[\begin{array}{ccc}1 & 0 & t_{x} \\ 0 & 1 & t_{y} \\ 0 & 0 & 1\end{array}\right] \\ &=s\left[\begin{array}{ccc}\cos \theta & -\sin \theta & t_{x} \cos \theta-t_{y} \sin \theta \\ \sin \theta & \cos \theta & t_{x} \sin \theta+t_{y} \cos \theta \\ 0 & 0 & \frac{1}{s}\end{array}\right] \end{aligned}(8)</script><p>对应的参数如下 :</p>
+<p>$M$: 仿射变换矩阵，包含旋转，缩放，平移</p>
+<p>$h_t$: 表示仿射变换后特征图的高度，实验中为8</p>
+<p>$w_t$: 表示仿射变换后特征图宽度</p>
+<p>$(x,y)$表示shared feature maps的坐标点</p>
+<p>$(t,b,l,r)$表示特征图中的点距离旋转的框的上下左右的距离</p>
+<p>$\theta$: 表示检测框的旋转角</p>
+<p>有了变换参数，利用仿射变换很容易得到最终的RoI特征:</p>
+<script type="math/tex; mode=display">
+\left(\begin{array}{l}x_{i}^{s} \\ y_{i}^{s} \\ 1\end{array}\right)=\mathbf{M}^{-1}\left(\begin{array}{l}x_{i}^{t} \\ y_{i}^{t} \\ 1\end{array}\right) (9)</script><p>对于$\forall i \in\left[1 \ldots h_{t}\right], \forall j \in\left[1 \ldots w_{t}\right], \forall c \in[1 \ldots C]$有</p>
+<script type="math/tex; mode=display">
+V_{i j}^{c}=\sum_{n}^{h_{s}} \sum_{m}^{w_{s}} U_{n m}^{c} k\left(x_{i j}^{s}-m ; \Phi_{x}\right) k\left(y_{i j}^{s}-n ; \Phi_{y}\right)(10)</script><p>$V^c_{ij}$是location$(i,j)$在c通道的输出值</p>
+<p>$U^c_{nm}$是$(n,m)$在c通道的输入值</p>
+<p>$h_s,w_S$：代表输入的高和宽</p>
+<p>$\Phi_x,\Phi_y$是双线性插值的核$k()$ 的参数</p>
+<p>$k()$其中定义了插值方法，具体为双线性插值。由于文本建议的宽度可能不同，在实践中，我们将特征映射填充到最长的宽度，而忽略了识别损失函数中的填充部分。</p>
+<p>STN[21]采用相似的仿射变换，但通过不同的方法得到变换参数，主要用于图像域，即图像本身的变换。RoIRotate以共享卷积生成的feature map为输入，生成所有text proposals的feature map，高度固定，长宽比不变。</p>
+<p>与目标分类不同，文本识别对检测噪声非常敏感。预测文本区域的一个小错误就可能切断几个字符，不利于网络训练，因此在训练中我们使用了ground truth文本区域而不是预测文本区域。测试时，使用阈值和NMS对预测文本区域进行过滤。在RoIRotate之后，转换后的特征映射被提交给text recognition branch。</p>
+<h4 id="Text-Recogntion-Branch"><a href="#Text-Recogntion-Branch" class="headerlink" title="Text Recogntion Branch"></a>Text Recogntion Branch</h4><p>text recogntion branch目的于使用共享卷积提取以及RoIRotate转换后的region feature来预测文本label。</p>
+]]></content>
+      <categories>
+        <category>ocr</category>
+      </categories>
+      <tags>
+        <tag>end2end ocr</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Gaussian distribution</title>
+    <url>/2020/04/23/Gaussian-distribution/</url>
+    <content><![CDATA[<h3 id="多元高斯分布"><a href="#多元高斯分布" class="headerlink" title="多元高斯分布"></a>多元高斯分布</h3><p>多维高斯分布表达式为:</p>
+<script type="math/tex; mode=display">
+p(x|\mu,\Sigma)=\frac{1}{(2\pi)^{\frac{p}{2}}|\Sigma|^{\frac1 2}}e^{-\frac1 2(x-\mu)^T\Sigma^{-1}(x-\mu)}</script><p>其中 $x,\mu \in \mathbb{R}^p,\Sigma \in \mathbb{R}^{p \times p}$ , $\Sigma$ 为协方差矩阵，一般就是半正定矩阵，这里只考虑为正定矩阵。当 $\Sigma=1$ 时，就成为了一维高斯分布。</p>
+<p>马式距离：</p>
+<script type="math/tex; mode=display">
+dis=\sqrt{(x-\mu)^T\Sigma^{-1}(x-\mu)}(x与\mu之间)</script><a id="more"></a>
+<p>对对称的协方差矩阵进行分解可得, $u_i $ 是特征向量:</p>
+<script type="math/tex; mode=display">
+\Sigma=U\Lambda U^T =(u_1,u_2,...,u_p)diag(\lambda_i)(u_1,u_2,...,u_p)^T=\sum_{i=1}^{p}u_i\lambda_iu_i^{T}</script><p>即:</p>
+<script type="math/tex; mode=display">
+\Sigma^{-1}=\sum_{i=1}^{p}u_i\frac 1\lambda_iu_i^T</script><p>令 $y_i=(x-\mu)^T\mu_i$ 由于 $x,\mu$ 的维度 $p \times 1$ 所以 $y_i$ 为一个数</p>
+<p>得</p>
+<script type="math/tex; mode=display">
+\begin{aligned}\Delta &=(x-\mu)^T\Sigma^{-1}(x-\mu) \\&=\sum_{i=1}^p(x-\mu)^Tu_i\frac1 \lambda_iu_i^T(x-\mu) \\&=\sum_{i=1}^p\frac {y_i^2} {\lambda_i}\end{aligned}</script><p>我们注意到 $y_{i}$ 是 $x-\mu$ 在特征向量 $u_{i}$ 上的投影长度，因此上式子就是 $\Delta$ 取不同值时的同心椭圆。</p>
+<p>下面我们看多维高斯模型在实际应用时的两个问题</p>
+<ol>
+<li><p>参数 $\Sigma,\mu$ 的自由度为 $O(p^{2})$ 对于维度很高的数据其自由度太高。解决方案：高自由度的来源是 $\Sigma$ 有 $\frac{p(p+1)}{2}$ 个自由参数，可以假设其是对角矩阵，甚至在各向同性假设中假设其对角线上的元素都相同。前一种的算法有 Factor Analysis，后一种有概率 PCA(p-PCA) 。</p>
+</li>
+<li><p>第二个问题是单个高斯分布是单峰的，对有多个峰的数据分布不能得到好的结果。解决方案：高斯混合GMM 模型。</p>
+</li>
+</ol>
+<p>多维高斯分布的常用定理：</p>
+<p>我们记 $x=(x_1, x_2,\cdots,x_p)^T=(x_{a,m\times 1}, x_{b,n\times1})^T,\mu=(\mu_{a,m\times1}, \mu_{b,n\times1}), \Sigma=\begin{pmatrix}\Sigma_{aa}&amp;\Sigma_{ab}\\\Sigma_{ba}&amp;\Sigma_{bb}\end{pmatrix}$ 已知 $x\sim\mathcal{N}(\mu,\Sigma)$ </p>
+<p>首先是一个高斯分布的定理：</p>
+<blockquote>
+<p>  定理：</p>
+<p>  已知 $x\sim\mathcal{N}(\mu,\Sigma), y\sim Ax+b$，那么 $y\sim\mathcal{N}(A\mu+b, A\Sigma A^T)$。</p>
+<p>  证明：</p>
+<p>  $\mathbb{E}[y]=\mathbb{E}[Ax+b]=A\mathbb{E}[x]+b=A\mu+b$，</p>
+<p>  $Var[y]=Var[Ax+b]=Var[Ax]=A\cdot Var[x]\cdot A^T$</p>
+</blockquote>
+<p>下面利用这个定理得到 $p(x_a),p(x_b),p(x_a|x_b),p(x_b|x_a)$ 这四个量。</p>
+<ol>
+<li>$x_a= \begin{pmatrix} \mathbb{I_{m \times m}} &amp; \mathbb{O}_{m \times n}\end{pmatrix} \begin{pmatrix} x_a \\\ x_b \end{pmatrix}$ 代入定理中可得 ： </li>
+</ol>
+<script type="math/tex; mode=display">
+\mathbb{E}[x_a]=\left(\begin{matrix}\mathbb{I} &\mathbb{O} \end{matrix}\right)\left(\begin{matrix}\mu_a \\\\\mu_b\end{matrix}\right)=\mu_a</script><script type="math/tex; mode=display">
+Var[x_a]=\begin{pmatrix}\mathbb{I}&\mathbb{O}\end{pmatrix}\begin{pmatrix}\Sigma_{aa}&\Sigma_{ab} \\\\ \Sigma_{ba}&\Sigma_{bb}\end{pmatrix}\begin{pmatrix}\mathbb{I}\\\\ \mathbb{O}\end{pmatrix}=\Sigma_{aa}</script><p>所以 $x_a\sim\mathcal{N}(\mu_a,\Sigma_{aa})$ </p>
+<ol>
+<li>同样的，$x_b\sim\mathcal{N}(\mu_b,\Sigma_{bb})$。</li>
+<li>对应条件概率 $p(x_a|x_b)、p(x_b|x_a)$ 构造三个量来进行求解：</li>
+</ol>
+<script type="math/tex; mode=display">
+\begin{aligned} x_{b.a}&=x_b-\Sigma_{ba}\Sigma_{aa}^{-1}x_a \\\\\mu_{b.a}&=\mu-\Sigma{ba}\Sigma_{aa}^{-1}\mu_a \\\\\Sigma_{bb.a}&=\Sigma_{bb}-\Sigma_{ba}\Sigma_{aa}^{-1}\Sigma_{ab}\end{aligned}</script><p>可以看到其实 $x_{b.a}$ 就是:</p>
+<script type="math/tex; mode=display">
+x_{b.a}=\begin{pmatrix}-\Sigma_{ba}\Sigma_{aa}^{-1} & \mathbb{I}_{n \times n}\end{pmatrix} \begin{pmatrix}x_a \\\\ x_b\end{pmatrix}</script><p>所以:</p>
+<p><img src="/2020/04/23/Gaussian-distribution/figure1.png" alt></p>
+<ol>
+<li>同理可得:</li>
+</ol>
+<script type="math/tex; mode=display">
+\begin{aligned} x_{a\cdot b}&=x_a-\Sigma_{ab}\Sigma_{bb}^{-1}x_b\\\\ \mu_{a\cdot b}&=\mu_a-\Sigma_{ab}\Sigma_{bb}^{-1}\mu_b\\\\ \Sigma_{aa\cdot b}&=\Sigma_{aa}-\Sigma_{ab}\Sigma_{bb}^{-1}\Sigma_{ba}\end{aligned}</script><p>所以可得：</p>
+<script type="math/tex; mode=display">
+\mathbb{E}[x_a|x_b]=\mu_{a\cdot b}+\Sigma_{ab}\Sigma_{bb}^{-1}x_b</script><script type="math/tex; mode=display">
+Var[x_a|x_b]=\Sigma_{aa\cdot b}</script><p>下面利用上边四个量，求解线性模型：</p>
+<blockquote>
+<p>  已知：$p(x)=\mathcal{N}(\mu,\Lambda^{-1}),p(y|x)=\mathcal{N}(Ax+b,L^{-1})$，求解：$p(y),p(x|y)$。</p>
+<p>  解：令 $y=Ax+b+\epsilon,\epsilon\sim\mathcal{N}(0,L^{-1})$，所以 $\mathbb{E}[y]=\mathbb{E}[Ax+b+\epsilon]=A\mu+b$，$Var[y]=A \Lambda^{-1}A^T+L^{-1}$，因此：</p>
+<script type="math/tex; mode=display">
+  p(y)=\mathcal{N}(A\mu+b,L^{-1}+A\Lambda^{-1}A^T)</script><p>  引入 $z=\begin{pmatrix}x\\\ y\end{pmatrix}$，我们可以得到 $Cov[x,y]=\mathbb{E}[(x-\mathbb{E}[x])(y-\mathbb{E}[y])^T]$。对于这个协方差可以直接计算：</p>
+<script type="math/tex; mode=display">
+  \begin{aligned}
+  Cov(x,y)&=\mathbb{E}[(x-\mu)(Ax-A\mu+\epsilon)^T]=\mathbb{E}[(x-\mu)(x-\mu)^TA^T]=Var[x]A^T=\Lambda^{-1}A^T
+  \end{aligned}</script><p>  注意到协方差矩阵的对称性，所以 </p>
+<script type="math/tex; mode=display">
+  p(z)=\mathcal{N}\begin{pmatrix}\mu\\\\ A\mu+b\end{pmatrix},\begin{pmatrix}\Lambda^{-1}&\Lambda^{-1}A^T\\\\ A\Lambda^{-1}&L^{-1}+A\Lambda^{-1}A^T\end{pmatrix}</script><p>  根据之前的公式，我们可以得到：</p>
+<script type="math/tex; mode=display">
+  \mathbb{E}[x|y]=\mu+\Lambda^{-1}A^T(L^{-1}+A\Lambda^{-1}A^T)^{-1}(y-A\mu-b)</script><script type="math/tex; mode=display">
+  Var[x|y]=\Lambda^{-1}-\Lambda^{-1}A^T(L^{-1}+A\Lambda^{-1}A^T)^{-1}A\Lambda^{-1}</script></blockquote>
+]]></content>
+      <categories>
+        <category>math</category>
+      </categories>
+      <tags>
+        <tag>Gaussian_distribution</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Looking Fast and Slow,Memory-Guided Mobile Video Object Detection</title>
+    <url>/2020/03/18/Looking-Fast-and-Slow/</url>
+    <content><![CDATA[<h4 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h4><p>1、该论文以生物视觉系统的直觉思路，构建了一个的fast。memory-guided 特征提取器，思路为一个特征maintain 提取器来存储当前帧的主要信息，另外一个特征提取器来提取下一帧的gist信息。</p>
+<p>2、其中用到的interleaving policy是采用reinforcement learning的方法。</p>
+<p>3、72.3FPS 在Pixel 3 phine上，sota 在Imagenet VID 2015</p>
+<a id="more"></a>
+<h4 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h4><p>主要分为多个模块：</p>
+<p>1、后处理方法</p>
+<p>将单图像检测扩展到视频的初步工作通常集中在后处理步骤，其中每帧检测被链接在一起形成轨道，并且基于轨道中的其他检测来修改检测置信度。Seq-nms [7]通过动态编程寻找轨迹，增强了较弱预测的可信度。TCNN [14, 15]提供了一个具有光流的管道，用于跨帧传播检测和跟踪算法，以找到用于重新分析的小管道。这些早期方法产生了相当大的性能改进，但没有从根本上改变基础的每帧检测过程，这限制了它们的有效性。</p>
+<p>2、Feature Flow Methods</p>
+<p>(1)卷积神经网络中的中间特征可以直接通过光流在视频帧之间传播</p>
+<p>(2)DFF:稀疏关键帧上进行检测并通过计算光流来在其他帧上执行特征传播就足够了，这实际上需要更少的代价</p>
+<p>(3)FGDA:如果密集计算来进行当前帧的检测并且相邻帧的特征与当前帧扭曲，通过加权平均聚合，则该想法也可用于提高准确度</p>
+<p>这些方法都是基于optical flow的方法</p>
+<p>3、Multi-frame Methods</p>
+<p>提取关键帧的信息进行传播，从而提升精度</p>
+<p>4、Adaptive Keyframe Selection</p>
+<p> 自适应关键帧选择 ：稀疏地处理视频时，选择关键帧的方法有多种。</p>
+<p>作者提出的方法：</p>
+<p>通过利用记忆内存模块中包含的信息来构建可学习的自适应策略，从而形成一个完整合理的检测准则。</p>
+<h4 id="Approach"><a href="#Approach" class="headerlink" title="Approach"></a>Approach</h4><p>1、交错模型（不同特征提取器之间的交错使用）</p>
+<p>2、记忆模块</p>
+<p>修改ConvLSTM，使之有更好的长期依赖和速度优势。</p>
+<p>3、train</p>
+<p>1&gt;预训练LSTM的权重，再训练其分类器。</p>
+<p>2&gt;训练SSD</p>
+<p>4、 Adaptive Interleaving Policy</p>
+<p>我们采用简单的交错策略可以达到具有竞争力的结果，但一个自然的问题是，是否有可能优化交错策略以进一步改善结果。我们提出了一种使用强化学习来学习自适应交错策略的新方法。重要的观察是，为了有效地帮助较小的网络，记忆模块必须包含一些检测置信度，我们可以将其作为交错策略的一部分。因此，我们构建一个策略网络π，它检查LSTM状态并决定下一个将要运行的特征提取器，如图4所示。然后，我们使用Double Q-learning (DDQN)[34]来训练策略网络。</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/1.png" alt></p>
+<p>为了形成强化学习问题，有必要定义动作空间，状态空间和奖励函数。动作空间由m个动作组成，动作a对应于在下一个时间步长运行特征提取器fa。我们将状态表示为：</p>
+<p>为了形成强化学习问题，有必要定义动作空间，状态空间和奖励函数。动作空间由m个动作组成，动作a对应于在下一个时间步长运行特征提取器fa。我们将状态表示为：</p>
+<script type="math/tex; mode=display">
+S=(c_t,h_t,c_t-c_{t-1},h_t-h-t-1,\eta_t)</script><p>其中包括当前LSTM状态 $c_t$ 和 $h_t$  .以及它们在当前步骤发生的变化 $(c_t-c_{t-1}) $ 和 $(h_t-h_{t-1})$ 我们还添加了一个历史动作项η，因此策略网络可以了解其先前的动作，可以避免过度运行f0。历史动作项是一个长度为20的二进制向量。对所有的k，如果f1在k步前运行则η的第k个条目为1，否则为0。</p>
+<p>然后对于该方法，其中有所谓的奖励方式，分为速度奖励与精度奖励。速度奖励只需要其速度达到f1时给出即可，对于精度损失差可以给出的精度奖励为</p>
+<script type="math/tex; mode=display">
+R(a)= \{\begin{array}{ll}\min _{i} L\left(D^{i}\right)-L\left(D^{0}\right) & a=0 \\ \gamma+\min _{i} L\left(D^{i}\right)-L\left(D^{1}\right) & a=1\end{array}</script><p>训练算法如下:</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/train.png" alt></p>
+<p>5、推理优化</p>
+<p><strong>异步推理</strong> 基于关键帧的检测方法的一个问题是它们仅考虑摊销的运行时间。但是，由于这些方法在关键帧上执行大量计算，因此跨帧的延迟极不一致。最坏情况下，这些方法并不比单帧方法快，这限制了它们的实用性。李等人[17]通过并行运行网络来解决语义视频分割中的这个问题。同样，交错框架也自然地建议采用异步推理方法，消除摊销和最坏情况运行时之间的差距，使我们的方法能够在移动设备上实时平滑运行。</p>
+<p>当同步运行交错模型时，每个时间步执行一个特征提取器，因此最大潜在延迟取决于f0。但是，通过在单独的线程中运行特征提取器，可以轻松地并行化此过程，我们称之为异步模式。异步模式下，f1在每一步运行并专门用于检测，而f0每隔τ帧运行一次并在运行完成时更新记忆模块。轻量级特征提取器在每个步骤使用最新的记忆内存，不再需要等待大的特征提取器运行。这在图5中说明。</p>
+<p><strong>量化</strong> 依赖于多个特征提取器而不是光流的另一个好处：标准推理优化方法进行小的改变后就可以应用。特别地，我们证明了我们的交错框架可以使用[13]中的模拟量化训练过程进行量化。Tensorflow [1]量化库在MobileNet和SSDLite层可直接使用。对于LSTM，在[13]的算法1中，在所有数学运算（加法，乘法，sigmoid和ReLU6）后插入伪量化操作。激活后的范围sigmoid固定为[0, 1]，ReLU6为[0, 6]，确保零完全可以表示。我们还确保连接操作的所有输入范围相同，以消除重新缩放的需要（如[13]中A.3所述）。我们最终的量化异步模型在Pixel 3手机上的运行速度为72.3 FPS，是我们未优化模型帧速率的三倍。</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/5.png" style="zoom:50%;"></p>
+]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>video sequence</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition</title>
+    <url>/2020/03/04/MORAN/</url>
+    <content><![CDATA[<h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>主要解决的是自然场景下的弯曲文本检测，方法为将弯曲text region 矫正，然后进行recognition。</p>
+<ol>
+<li>The multi-object rectification network is designed for rectifying images that contain irregular text.</li>
+<li>It is trained in a weak supervision way, thus requiring only images and corresponding text labels. </li>
+<li>a fractional pickup method is proposed for an attention-based decoder in the training phase.</li>
+</ol>
+<a id="more"></a>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><ol>
+<li><p>MORAN，可读取rotated 、scaled 、stretched 的字符并处理</p>
+</li>
+<li><p>MORAN包含，MORN（multi-object rectification network）和ASRN（attention-based sequence recogntion）</p>
+</li>
+<li><p>过程分为两步骤：</p>
+<p><code>(1)MORN做空间变换，MORN将图片中的不规则文本区域进行矫正</code></p>
+<p><code>(2)ASRN 将纠正后的图像作为input 进行识别文本</code></p>
+</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Figure2.png" alt="Figure2" style="zoom:50%;"></p>
+<h3 id="重点"><a href="#重点" class="headerlink" title="重点"></a>重点</h3><p><strong>The training of the MORN is guided by the ASRN, which requires only text labels</strong>  由ASRN的指导训练MORN？如何做？</p>
+<p>没有任何geometric-level和pixel-level的监督训练，即在图像上没有变化的label（coordinates） 训练是weak supervision的</p>
+<h4 id="MORN"><a href="#MORN" class="headerlink" title="MORN"></a>MORN</h4><ol>
+<li>初始化一个coordinate grid（坐标网格）每个pixel都有其位置坐标。</li>
+<li>MORN基于这些坐标学习生成一个offset grid（偏移网格），然后对这些pixel进行采样来矫正图像。<strong>（矫正图像rectified image由ASRN来获得）</strong></li>
+</ol>
+<h4 id="ASRN"><a href="#ASRN" class="headerlink" title="ASRN"></a>ASRN</h4><ol>
+<li>显然矫正过的规则文字更有利于识别</li>
+<li>由于存在的attention-based的方法无法准确的取得 feature areas和target的对准，所以提出了一个 fractional pickup method方法来train ASRN：通过在feature map的不同部分采用若干尺度的拉伸在train 过程中的每次迭代都对feature areas有随机变化，所以ASRN更为robust</li>
+</ol>
+<h4 id="curriculum-learning-strategy"><a href="#curriculum-learning-strategy" class="headerlink" title="curriculum learning strategy"></a>curriculum learning strategy</h4><p>由于前面说到的MORN和ASRN的train是相互作用的，所以首先fix其中一个，对另外一个更为有效。</p>
+<h3 id="contribution"><a href="#contribution" class="headerlink" title="contribution"></a>contribution</h3><ol>
+<li>MORAN可识别irregular scene text</li>
+<li>MORN is flexible ，trained in a weak supervision way</li>
+<li>提出一个fractional pickup method来训练ASRN ，同时拓展一个visual field 方法来展示MORAN</li>
+<li>提出一个curriculum learning strategy 方法来使MORAN学习的更为有效</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Figure4.png" alt="FIgure4" style="zoom:50%;"></p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>pass</p>
+<h3 id="Methodology"><a href="#Methodology" class="headerlink" title="Methodology"></a>Methodology</h3><p>分为两步，MORN来学习这个offset of each part of the image</p>
+<p>ASRN 是一个CNN-LSTM 带有attention的decoder架构。</p>
+<h4 id="MORN-1"><a href="#MORN-1" class="headerlink" title="MORN"></a>MORN</h4><ol>
+<li><p>Common methods to recitify patterns scuh as affine transformation network.受限于certain geometric constraints（即空间几何限制（pix之间的空间关系不变））</p>
+<p><img src="/2020/03/04/MORAN/Figure3.png" alt="Figure3" style="zoom:50%;"></p>
+</li>
+<li><p>free of geometric constraints 这里用deformable cnn效果不好（由于识别模型在处理各种形状的多次干扰时仍然不够强，因此我们考虑对图像进行校正以降低识别的难度）</p>
+</li>
+<li><p>MORN预测的是字符的位置偏移量，而不是字符的类别。用于分类的字符详细信息是不必要的。因此，将池化层置于卷积层之前，以避免噪声并减少计算量。</p>
+</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Table1.png" alt="Table1" style="zoom:50%;"></p>
+<p><strong>MORN 架构：</strong></p>
+<ol>
+<li>第一步将图片分割为多个parts（分为3*11 =33 parts）</li>
+<li>用tanh来激活offset的值，将其归约到（-1，1）范围内。</li>
+<li>offset map有两个channels，分别表示x坐标和y坐标。</li>
+<li>最后通过双线性插值进行上采样，将图片变为原本size。</li>
+<li>将特定的偏移量分配到每个像素后，图像的转换是smooth的。在Figure3的heat map中，红色和蓝色边界两边的颜色深度逐渐变化，说明了校正的平稳性。矫正后的图像没有锯齿状的边缘。</li>
+</ol>
+<p>question：这个MORN如何训练？（下文有详细介绍）</p>
+<p><strong>重构图</strong></p>
+<p>由MORN生成的 offset map是偏移图，所以有一个ori position map来进行对应。该map称为 basic grid。其左上角坐标为(-1,1)右下角为(1,1) 。不同channels但在同一个position的pixel有相同的坐标。</p>
+<p><strong>tips：将两个channels分别存储 x和y 的像素值</strong> </p>
+<p>所以变换后的坐标就是：</p>
+<p><img src="/2020/03/04/MORAN/equation1.png" alt="equation1" style="zoom:50%;"></p>
+<p>在sampling的时候再将offset map 反normalization到 $[0,W] [0,H]$ 上,pixel value就将其通道值取出即可：</p>
+<p><img src="/2020/03/04/MORAN/equation.png" alt="equation" style="zoom:50%;"></p>
+<p><strong>(此处省略一大段作者吹MORN的描述哈哈哈)</strong> </p>
+<p>然后对应ASRN，用上了LSTM+GRU来实现该NET。</p>
+<p><img src="/2020/03/04/MORAN/Table2.png" alt="Table2" style="zoom:50%;"></p>
+<p>该处涉及NLP的，稍后再添加。</p>
+<h3 id="Curriculum-Training"><a href="#Curriculum-Training" class="headerlink" title="Curriculum Training"></a>Curriculum Training</h3><p>作者发现MORN和ASRN通过end2end train的时候相互冲突。所以其提出了一个叫做curriculum learning strategy来训练整个MORAN网络。其包括三个step(分别进行优化，然后再进行end 2 end train)</p>
+<p><strong>step 如下</strong>：</p>
+<ol>
+<li><p><strong>First Stage for ASRN</strong> : 首先用规则文本的训练样本来训练ASRN。然后通过Gupta发布的一个有紧密标注框的dataset。</p>
+<p>然后采用minimum circumscribed horizontal rectangle（也就是最优程度矩形来裁剪这样的一个文本图）来获得所谓的不规则的文本样本。</p>
+</li>
+<li><p><strong>second stage for MORN</strong>： 训练好这样一个ASRN之后，就有一个对规则文本识别效果很好的model。 但是这时候这个model对irregular的识别是很不robust的，所以可以提供一定信息的梯度。所以这时候固定住ASRN的weights，然后将ASRN stacked 在MORN之后，如果MORN没有reduce the difficulty of recogntion 那么ASRN就只会提供很有限的梯度。由此方法来进行训练MORN</p>
+<p><code>tips:也就是说，如果一张图片经过了MORN但是其识别效果和没有经过MORN的效果差不多，那么其关于ASRN提供的梯度就相当于没有（可以将固定weights的ASRN理解成一个layer</code></p>
+</li>
+<li><p><strong>Third Stage for end2end optimization</strong> 由前两步之后，再进行end2end 训练。</p>
+</li>
+</ol>
+<p>所以由此可以了解到MORAN的训练策略，则为所谓的weak supervision</p>
+<h4 id="Limitation-of-the-MORAN"><a href="#Limitation-of-the-MORAN" class="headerlink" title="Limitation of the MORAN"></a>Limitation of the MORAN</h4><p>在形变较大的时候，MORN的效果较差。</p>
+]]></content>
+      <categories>
+        <category>ocr</category>
+      </categories>
+      <tags>
+        <tag>rectify method</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition</title>
+    <url>/2020/02/29/OFF/</url>
+    <content><![CDATA[<h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>1.提出了一个Optical Flow guided Feature(OFF)模块，可以用于video action recognition。直接理解，该模块可以直接计算deep feature maps的pixel-wise level的空间时序梯度。</p>
+<p>2.可以使cnn来提取到空间时序信息（显著效果在frames间）。</p>
+<p>3.cost小，同时acc不错。</p>
+<p>4.开源 github地址：<a href="https://github.com/kevin-ssy/Optical-Flow-Guided-Feature" target="_blank" rel="noopener">开源地址</a></p>
+<a id="more"></a> 
+<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>1.temporal information is the key ingredient of video action recognition</p>
+<p>2.提取dense optical flow 并不高效</p>
+<p>3.3D CNN（以RGB作为input）可以获取temporal information 但是其效果仍比不上two-stream 的方法</p>
+<p>4.two steam方法有(paper)：</p>
+<p><code>(1)Two-stream convolutional networks for action recognition in videos</code></p>
+<p><code>(2)Temporal segment networks: Towards good practices for deep action recognition.</code></p>
+<h4 id="Optical-Flow-guided-Feature"><a href="#Optical-Flow-guided-Feature" class="headerlink" title="Optical Flow guided Feature"></a>Optical Flow guided Feature</h4><p>1.从optical flow 的orthogonal space(正交空间) 定义一个新的特征表达</p>
+<p>2.该特征可从特征图中提取垂直方向和水平方向的spatial gradients，同时时间梯度（temporal gradients 通过不同frame之间的特征图来获得）</p>
+<p>3.全部操作都可微，即可bp。所以可将该模块直接嵌入cnn 架构进行训练。</p>
+<p>4.OFF的一个重要组成部分就是不同image/segments之间的feature 差异(两张图之间的运动信息用CNN直接提取)。shown in Fig 1</p>
+<p><img src="/2020/02/29/OFF/figure1.png" alt="Figure1" style="zoom:50%;"></p>
+<p>5.不同图像中的负值表示身体部分/物体消失的位置，而正值表示身体部分/物体出现的位置。  <strong>(由CNN提取)</strong></p>
+<p>6.时间差异可以进一步与空间梯度相结合。（稍后有推导）</p>
+<p>7.在feature map上做这个faster and rebust 原因：</p>
+<p><code>(1)它使空间和时间网络具有weights共享的能力</code></p>
+<p><code>(2)通过在原始帧中可靠地消除局部和背景噪声，深度学习的特征能传达更多的语义和鉴别表征。</code></p>
+<p>8.Two contribution:</p>
+<p><code>(1)OFF is a fast and robust motion representation. 200frames/s (only RGB as the input)</code></p>
+<p><code>(2)an OFF equipped network can be trained in an end-to-end fashion.</code></p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>1.a breakthrough in action recogntion is two-stream based on CNN（用CNN来学习hand-craft的feature）</p>
+<p>2.用3D CNN来提取motion information,但是依赖项相对较多（net arch，training sample，param regularization)，sota的3d CNN still rely on traditional optical flow来捕获motion patterns.</p>
+<p>3.comparision :</p>
+<p><code>OFF :</code></p>
+<p> <code>(1)RGB stream等同于two stream 方法</code></p>
+<p><code>(2)与optical flow这种motion representation 可以互补使用</code></p>
+<p>4.获取长时间段的时序信息，引入LSTM来编码sequence-illustrating features</p>
+<p>5.集成ranked pool方法的叫做dynamic image方法，是summarize 一连串frames的，但是OFF是直接或许motion information的。</p>
+<p><img src="/2020/02/29/OFF/figure2.png" alt="Figure2" style="zoom:50%;"></p>
+<h4 id="Optical-Flow-Guided-Feature"><a href="#Optical-Flow-Guided-Feature" class="headerlink" title="Optical Flow Guided Feature"></a>Optical Flow Guided Feature</h4><p>由传统光流的光强不变性限制（brightness constant constraint ）启发，其公式表示为:</p>
+<script type="math/tex; mode=display">
+I(x, y, t)=I(x+\Delta x, y+\Delta y, t+\Delta t) (1)</script><p>$I(x,y,t)$ : 坐标为 $(x,y)$ 的像素点在 $t$ 时刻，其在 $\Delta t$ 光强不变，所以当我们将该假设应用到feature level，就有:</p>
+<script type="math/tex; mode=display">
+f(I ; w)(x, y, t)=f(I ; w)(x+\Delta x, y+\Delta y, t+\Delta t) (2)</script><p>$f:$ 从image $I$ 中提取feature的映射函数。</p>
+<p>$w:$ 为 $f$ 的参数</p>
+<p>该paper 应用的conv block（conv layer +ReLU +pooling）</p>
+<p>设 $p=(x,y,t)$ ,根据optical flow的定义  <strong>(有这个定义嘛。。。?)</strong> 可得:</p>
+<script type="math/tex; mode=display">
+\frac{\partial f(I ; w)(p)}{\partial x} \Delta x+\frac{\partial f(I ; w)(p)}{\partial y} \Delta y+\frac{\partial f(I ; w)(p)}{\partial t} \Delta t=0 (3)</script><p>除以 $\Delta t$ 可得:</p>
+<script type="math/tex; mode=display">
+\frac{\partial f(I ; w)(p)}{\partial x} v_{x}+\frac{\partial f(I ; w)(p)}{\partial y} v_{y}+\frac{\partial f(I ; w)(p)}{\partial t}=0(4)</script><p>在 $p=(x,t,z)$  处，  $(v_x,x_y)$ 表示二维点点运动变量，对 $x,y $ 的偏导则是空间梯度(spatial gradients)，对 $t$ 的偏导则是单独在time 轴上的。</p>
+<p>作为一个特例，也就是当 $f(I;w)(p)=I(p)$ 时（即特征提取的后依然等于原像素点）则 $f(I;w)(p)$ 就是一个简单不变的表达，所以此时的 $(v_x,v_y)$ 就是所谓的 <strong><em>optical flow</em></strong> (常用求解equation 4这个优化问题来获得光流 ) </p>
+<p>关于 $\frac{\partial f(I ; w)(p)}{\partial t}$ 项，该表示 RGB frames之间的不同。由于之前的一些工作都没解释为什么从帧之间提取的temporal difference能够work，所以以下作者进行了解释：</p>
+<p> 将 pixel  $I(p)$  推广到feature $f(I;w)(p)$ .广义上将 $[v_x,v_y]$ 称之为feature flow. 我们可以由equation 4得到 :</p>
+<script type="math/tex; mode=display">
+\vec{F}(I ; w)(p)=\left[\frac{\partial f(I ; w)(p)}{\partial x}, \frac{\partial f(I ; w)(p)}{\partial y}, \frac{\partial f(I ; w)(p)}{\partial t}\right]</script><p> 是 $[v_x,v_y,1]$ 在feature level的optical flow 的正交。</p>
+<p>因此，$\vec{F}(I;w)(p)$  的变化等同于optical flow在feature level的变化。即可以将 $\vec{F}(I;w)(p)$ 叫做OFF。</p>
+<h3 id="Using-Optical-Flow-Guided-Feature-in-Con-volutional-Neural-Network"><a href="#Using-Optical-Flow-Guided-Feature-in-Con-volutional-Neural-Network" class="headerlink" title="Using Optical Flow Guided Feature in Con- volutional Neural Network"></a>Using Optical Flow Guided Feature in Con- volutional Neural Network</h3><h4 id="Network-Arch"><a href="#Network-Arch" class="headerlink" title="Network Arch"></a>Network Arch</h4><p>网络包含三个sub-network，分为三个部分：</p>
+<p>1.feature generation</p>
+<p>这个sub-network就是使用common的CNN结构来提取一层特征。</p>
+<p>2.OFF </p>
+<p>将feature generation得到的feature进一步的提取，然后采用resnet思路进行refine，其实这里应该就有点像是嵌套了一个unet网络？</p>
+<p>3.classfication </p>
+<p>将前两个sub-network的结果进行直接action recogntion<br><img src="/2020/02/29/OFF/figure3.png" alt="Figure3"></p>
+<p> <em>图3。网络架构概述为两个部分。输入分为蓝色和绿色两部分，分别输入到特征生成子网络中获取基本特征。在我们的实验中，每个特征生成子网络的主干是BN-Inception[34]。这里K表示所选取的经过OFF子网络获得OFF特征的正方形特征图的最大边长。OFF子网络由多个OFF单元组成，在不同分辨率的OFF单元之间连接多个残差块[15]。从整体上看，这些剩余的块体构成了一个ResNet-20。不同子网络得到的分数是独立监督的。OFF单元的详细结构如图4所示。</em></p>
+<h5 id="Feature-Generation-Sub-network"><a href="#Feature-Generation-Sub-network" class="headerlink" title="Feature Generation Sub-network"></a>Feature Generation Sub-network</h5><p>basic features  $f(I;w)$  使用简单CNN layer以及ReLU，max pooling，BN</p>
+<h5 id="OFF-Sub-network"><a href="#OFF-Sub-network" class="headerlink" title="OFF Sub-network"></a>OFF Sub-network</h5><ol>
+<li>多个OFF units</li>
+<li>不同units使用不同depth的 $f(I;w)$ </li>
+<li>每一层的OFF layer包含 $1 \times 1$ 卷积</li>
+<li>out的时候将这些unit全部concatenate起来</li>
+<li>OFF 包含时间和空间梯度</li>
+</ol>
+<p><code>此处无法渲染，故图片代替:</code></p>
+<p><img src="/2020/02/29/OFF/equation.png" alt="e1" style="zoom:50%;"></p>
+<p><img src="/2020/02/29/OFF/figure4.png" alt="Figure4" style="zoom:50%;"></p>
+<h5 id="Classfiication-Sub-network"><a href="#Classfiication-Sub-network" class="headerlink" title="Classfiication Sub-network"></a>Classfiication Sub-network</h5><p>1.多个内积分类器来进行计算多个分类分数。</p>
+<p>2.通过对每个特征生成子网络或OFF子网络进行平均，合并所有采样帧的分类分数。语义层次上的OFF可用于在训练阶段生成分类分数，分类分数通过相应的损失进行学习。</p>
+<p><img src="/2020/02/29/OFF/equation2.png" alt="equation2" style="zoom:50%;"></p>
+<h5 id="Two-stage-Training-Strategy"><a href="#Two-stage-Training-Strategy" class="headerlink" title="Two-stage Training Strategy"></a>Two-stage Training Strategy</h5><ol>
+<li><p>TSN一类来训练feature generation</p>
+</li>
+<li><p>固定权值然后进行下一步骤的train</p>
+</li>
+</ol>
+<h5 id="Intermediate-Supervision-during-Training"><a href="#Intermediate-Supervision-during-Training" class="headerlink" title="Intermediate Supervision during Training"></a>Intermediate Supervision during Training</h5><p>在训练过程中，对OFF训练采用一种中间监督的方法来提升其效果。</p>
+<h5 id="Reducinhg-the-Memory-Cost"><a href="#Reducinhg-the-Memory-Cost" class="headerlink" title="Reducinhg the Memory Cost"></a>Reducinhg the Memory Cost</h5><p>对帧进行采样，如果训练和测试之间采样不同数量的片段，那么片段之间的持续时间可能会有所不同。根据 equation 3的公式，只有 $\Delta t$ 是fixed变量，equation 4才可以成立，如果我们在train和test中采样不同frames，那么时间间隔就不一样，所以就会导致eqution 4不成立</p>
+<p><code>tips:此处大概意思就是，如果采样不采用相同频率，那么时间间隔t就是不一致的，所以会导致等式不成立.(多个变量了都)</code></p>
+<p>所以采样方式如下：</p>
+<p>设置 $\alpha$ 为训练采样的帧数，$\beta$ 为测试采样的。video长度 $L$ 将会被分割为 $\lfloor L / \beta\rfloor$ ，然后在如下公式中：</p>
+<script type="math/tex; mode=display">
+0,1, \ldots, L-1-(\alpha -1) *\lfloor L / \beta\rfloor</script><p>随机选择 $p$, 将p当成fream seed. 可得总的training set就是 :</p>
+<script type="math/tex; mode=display">
+\{p, p+\lfloor L / \beta\rfloor, \dots, p+(\alpha-1) *\lfloor L / \beta\rfloor\}</script><h4 id="ignore-the-network-test-and-experiments"><a href="#ignore-the-network-test-and-experiments" class="headerlink" title="ignore the network test and experiments"></a>ignore the network test and experiments</h4>]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>optical flow</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Learning Spatio-Temporal Representation With Pseudo-3D Residual Networks</title>
+    <url>/2020/03/22/P3D/</url>
+    <content><![CDATA[<p>github地址: <a href="https://github.com/qijiezhao/pseudo-3d-pytorch" target="_blank" rel="noopener">https://github.com/qijiezhao/pseudo-3d-pytorch</a></p>
+<h4 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h4><p>该论文与自己的初始想法一致，都是构造性的伪3D 卷积。</p>
+<p>1、 在残差学习框架下，利用1×3×3卷积滤波器在空间域（相当于2D CNN）上模拟3×3×3卷积。再加上3×1×1卷积，在时间上构造相邻特征图上的时间连接，设计出多个不同的bottleneck块。</p>
+<p>2、 提出了一种新的结构，称为伪3D残差网（P3D ResNet）。</p>
+<p>在ResNet的不同位置组合每个块。<br>问题：</p>
+<p>1、所谓的spatio-temporal representation是什么？如何评价模型标准？对应的数据类型&gt;是什么？对应的label是什么？ 和video action recogntion有什么关系？</p>
+<p>2、其中如何用仿bottleneck的方法构造3D CNN？ </p>
+<h4 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h4><p>3D卷积进行特征提取可以同时考虑到时间和空间维度的特征，但是计算成本和模型存储都太大，针对3D卷积进行改造，提出P3D ResNet，用 $1 \times 3 \times3$ 卷积和  $3 \times 1 \times1$ 卷积代替  $3 \times 3 \times3$  卷积。</p>
+<p>所以提出的一个bottleneck (inception 里提出)方法来对3D CNN进行改进。对应的模型大小如下所示：</p>
+<p><img src="/2020/03/22/P3D/figure1.png" style="zoom:50%;"><br><a id="more"></a></p>
+<h4 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h4><p>1、传统方法</p>
+<p>2、深度学习方法：</p>
+<p>（1）《Two-stream convolutional networks for action recognition in videos》 被提到很多次，原文中 介绍为：two-stream architecture is devised by applying two CNN architectures separately on visual frames and staked optical flows. </p>
+<p>（2）Fisher Vector 可以用于将 local descriptors encode为全局表示</p>
+<p>（3）近年来将时间序列 加入序列模型进行结合的方法（LSTM）</p>
+<p>作者表示，深度学习方法常将视频流当作帧图像或者光流图序列来学习，这样的话就没有结合其中连续帧的信息挖掘。</p>
+<p>作者使用方法是2D spatial convolutions plus 1D temporal connections </p>
+<h4 id="P3D-Blocks-and-P3D-ResNet"><a href="#P3D-Blocks-and-P3D-ResNet" class="headerlink" title="P3D Blocks and P3D ResNet"></a>P3D Blocks and P3D ResNet</h4><p>P3D block如下:</p>
+<p><img src="/2020/03/22/P3D/P3D-block.png" style="zoom:50%;"></p>
+<p>作者将C3D $d \times k  \times k$ 分解为 $d \times 1 \times 1$ 的时间维度的 1D CNN 和 $1 \times k \times k$ 的空间信息上的2D CNN.</p>
+<p>关于  <strong>Residual Units </strong> 定义如下:</p>
+<script type="math/tex; mode=display">
+x_{t+1}=h(x_t)+F(x_t)</script><p>其中 $x_t$ 和 $x_{t+1}$ 表示第t个residual Unit的输入与输出。$h(x_t)=x_t$ 是一种标示映射 , $F()$ 是非线性残差函数</p>
+<p><strong>P3D design</strong></p>
+<p>design涉及到2个issue：</p>
+<ol>
+<li>是否2D 的空间卷积 (S) 与1D的时间域 (T) 有直接或者间接的影响？</li>
+</ol>
+<p>直接影响是指，可以把S的输出直接输入给T</p>
+<p>间接影响的话则是。两个滤波器之间的间接影响将连接解耦，使得每种滤波器都位于网络的不同路径上</p>
+<ol>
+<li>这两种过滤器是否都应该直接影响最终的输出</li>
+</ol>
+<p>所以作者设置了3个不同的residual block来测试</p>
+<p>P3D-A:</p>
+<script type="math/tex; mode=display">
+(I+T*S)*x_t :=x_t+T(S(x_t))=x_{t+1}</script><p>P3D-B:</p>
+<script type="math/tex; mode=display">
+(I+S+T)*x_t:=x_t+S(x_t)+T(x_t)=x_{t+1}</script><p>P3D-C:</p>
+<script type="math/tex; mode=display">
+(I+S+T*S)*x_t :=x_t +S(x_t)+T(S(x_t))=x_{t+1}</script><p><img src="/2020/03/22/P3D/P3D-ABC.png" style="zoom:50%;"></p>
+<p><strong>Bottleneck architectures.</strong></p>
+<p>用P3D替代原本的残差块。</p>
+<h3 id="Setting"><a href="#Setting" class="headerlink" title="Setting"></a>Setting</h3><p>数据集：UCF101</p>
+<p>ResNet-50, input：224 $\times$ 224 from 240 $\times$ 320 video frame ,dropout rate=0.9</p>
+<p>initialize: 刨除T，先使用Res-Net先进行初始化，然后在UCF101上fine tune</p>
+<p>对于P3D:</p>
+<p>the dimension of input video clip is set as 16 × 160 × 160 which is randomly cropped from the resized non-overlapped 16-frame clip with the size of 16 × 182 × 242.</p>
+<p>然后，每个帧/剪辑是随机水平翻转，以增强。在训练中，将每个小批设置为128帧/村里，并使用多个gpu并行实现。采用标准SGD对网络参数进行运算，初始学习率设定为0.001，每经过3K次迭代后除以10。在7.5K迭代后停止训练</p>
+<p>对比：</p>
+<p><img src="/2020/03/22/P3D/comparison.png" style="zoom:50%;"></p>
+<p>然后作者将A B C三个模块串联起来，效果也得到了提升。</p>
+<h3 id="Spatio-Temporal-Representation-Learning"><a href="#Spatio-Temporal-Representation-Learning" class="headerlink" title="Spatio-Temporal Representation Learning"></a>Spatio-Temporal Representation Learning</h3><p>对于更深的resNet-152上，使用Sports-1M数据集</p>
+<p>使用 <strong>DeepDraw</strong> 可视化。</p>
+<p><a href="https://github.com/auduno/deepdraw" target="_blank" rel="noopener">https://github.com/auduno/deepdraw</a></p>
+<p>使用t-SNE的可视化如下：</p>
+<p><img src="/2020/03/22/P3D/embedding.png" style="zoom:50%;"></p>
+]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>C3D</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Non-local neural networks</title>
+    <url>/2020/04/15/non-local/</url>
+    <content><![CDATA[<h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>提出一种 non-local 的操作，作为可以获取long-range依赖的嵌入模块。</p>
+<p>该模块计算position上的response值作为weigthed sum of the features</p>
+<p><a href="https://github.com/AlexHex7/Non-local_pytorch" target="_blank" rel="noopener">torch实现</a></p>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>如何获取到深层网络的long-range依赖是一个极其重要的重点。对于序列信息（语音语言）主流的实现方法就是使用RNN一类方法。而在图像中，都是采用CNN来进行建模的。</p>
+<p>RNN和CNN其实都是对local neighborhood（space or time）来进行处理操作的，对于比较长范围的信息就需要反复操作。这样会导致以下几个问题：</p>
+<ol>
+<li>计算效率问题</li>
+<li>optimiaztion困难</li>
+<li>这些方法对long-range的信息传递很不方便</li>
+</ol>
+<p>既然  $local$ 的方法局限性这么多，那为何不用  $non-local$，将一个点的位置响应，看作是所有特征位置响应的加权求和。也就是非局部。</p>
+<p>本文中提出了一个on-local的高效、简单、通用操作来获取深层网络中依赖信息（dependencies）其有以下一些优点：</p>
+<ol>
+<li>Non-local block通过任意两个位置（可无视两个位置之间的距离），直接计算long-range的依赖信息。</li>
+<li>使用Non-local后，仅一些层就可以在vidoe analysis上实现最优结果（17年论文）</li>
+<li>Non-local保留变量输入的size，同时可以很简单嵌入其他操作中。</li>
+</ol>
+<a id="more"></a>
+<h3 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h3><p>相关工作作者简单的介绍一个比较老的论文。重点还是后面介绍了一些捕获长距离依赖的一些方法。如条件随机场CRF,GNN </p>
+<p>self-attention :本文的作者阐述自己的工作与自注意力模型是很相关的。其和本文的思想其实很相近，都是加权的方法。作者说，self-attention可以看作non-local的一个特例，也就是non-local更为普适性。</p>
+<p>总而言之，非局部建模，是计算机视觉中一个长期至关重要但近来一直被忽略的因素。</p>
+<h3 id="Non-local-Neural-Networks"><a href="#Non-local-Neural-Networks" class="headerlink" title="Non-local Neural Networks"></a>Non-local Neural Networks</h3><h4 id="Formulation"><a href="#Formulation" class="headerlink" title="Formulation"></a>Formulation</h4><script type="math/tex; mode=display">
+y_i=\frac{1}{C(x)}\sum_{\forall j}f(x_i,x_j)g(x_j)(1)</script><p>$i$ 为表示计算的位置的index，同时 $j$ 为其余点（需要与 $i$ 计算信息的点）的index，输入为 $x$ 输出为 $y$ .函数 $f$ 为计算两个位置之间的关联信息， $g$ 函数了是计算全部输入信号的一个表示。</p>
+<p>该公式所谓的non-local是由于，其中全部的位置，即  $\forall j$  均被进行计算。</p>
+<p>将他们的关联做为一个权重，加权求和作为某一位置的输出。这就是本文思想上的核心，但细节 $f,g$ 函数并没有在这里具体给出。总的来收高度概括了其思想。</p>
+<p>与 $fc$  的差异： 神经网络中 $fc$ 与上述公式的计算方式上似乎很像。但实际上差异还是很明显的。首先， 设计$non-local$ 的核心基于计算两个位置关联的 $f$ 函数，而 $fc$ 使用的是已经学习过的参数，也就是说 $fc$ 函数是独立的存在，不是网络学习的。其次，$non-local$ 的输入支持可变大小，输入与输出在位置上是对应的，即有 $x_i$ 对应  $y_i$ 。但 $fc$ 的输入与输出是固定的，也无对应关系。</p>
+<h4 id="Instantiations"><a href="#Instantiations" class="headerlink" title="Instantiations"></a>Instantiations</h4><p>接下来提供几个 $f,g$ 的选择，但其实验证明没有太多影响。</p>
+<p>为了简化，将 $g$ 作为一个线性嵌入，即 $g(x_j)=W_gx_j$ 其中 $W_g$ 是科学系的权重矩阵。</p>
+<p>pairwise function 位置映射函数 $f$ 的选择：</p>
+<ol>
+<li>Gaussian:</li>
+</ol>
+<p>高斯内积相似度量:</p>
+<script type="math/tex; mode=display">
+f(x_i,x_j)=e^{x^T_ix_j}</script><p>其中 $x^T_ix_j$ 是点积相似度量。欧几里得距离也是可以用的，但是显然点积更为合适。</p>
+<ol>
+<li>Embedded Gaussian</li>
+</ol>
+<p>在嵌入式空间中的高斯内积：</p>
+<script type="math/tex; mode=display">
+f(x_i,x_j)=e^{\theta (x_i)^T\phi(x_j)}</script><p>其中 $\theta(x_i)=W_{\theta}x_i$ 同时  $\phi(x_j)=W_{\phi}x_j$ </p>
+<p>以上的正则化因子(公式1中)均设置为 $C(x)=\sum_{\forall j}f(x_i,x_j)$</p>
+<p>其中可以关联到self-attention方法：</p>
+<p>给定 $i$ ,有 $\frac1 {C(x)}f(x_i,x_j)$ 将 $\theta(x) 、\phi(x)$ 代入得 $\frac{1} {C(x)}e^{x_i^TW_{\theta}^TW_{\phi}x_j} $</p>
+<p>上式左边形式上就是一个沿着 <img src="https://www.zhihu.com/equation?tex=j" alt="[公式]"> 的一个 sorftmax 计算。其中</p>
+<script type="math/tex; mode=display">
+C(x)=\sum_{\forall j}f(x_i,x_j)​</script><p>仔细和softmax的形式比较可以发现就是那样对应的。因此我们可以将 $g$  函数考虑进来，并整体将其改成矩阵相乘的形式。可得：</p>
+<script type="math/tex; mode=display">
+y=softmax(x^TW_{\theta}^TW_{\phi}x)g(x)</script><p>注意里面的值都是向量或矩阵。神奇的是这个的结果恰好与《<a href="https://link.zhihu.com/?target=https%3A//papers.nips.cc/paper/7181-attention-is-all-you-need.pdf">Attention is all you need</a>》的注意的注意力机制的形式一样。这也就是作者为什么说本文的方法是其的一种拓展。尽管与注意力有关系，但softmax也不是必须的。下面是一些其他形式的非局部建模。</p>
+<ol>
+<li>Dot product</li>
+</ol>
+<script type="math/tex; mode=display">
+f(x_i,x_j)=\theta(x_i)^T\phi(x_j)</script><p>这里设置归一化函数 $C(x)=N$ 其中 $N$ 表示x的位置数目。</p>
+<p> 其实gaussian方法和dot-product方法的最大区别就是有没有softmax函数，其实这个函数也可以看做是起到一个激活函数的作用。</p>
+<ol>
+<li>Concatenation</li>
+</ol>
+<script type="math/tex; mode=display">
+f(x_i,x_j)=ReLU(w_f^T[\theta(x_i),\phi(x_j)])</script><p>其中 $[.,.]$ 表示链接操作，同时 $w_f$ 是权重向量，将链接向量（concatenated vecotr）变为标量。其中设置 $C(x)=N$ </p>
+<h4 id="Non-local-Block"><a href="#Non-local-Block" class="headerlink" title="Non-local Block"></a>Non-local Block</h4><p>此处介绍具体实现。</p>
+<p>为了能让non-local操作作为一个组件，可以直接插入任意的神经网络中，作者把non-local设计成residual block的形式，让non-local操作去学x的residual：</p>
+<script type="math/tex; mode=display">
+z_i=W_zy_i+x_i</script><p>其中 $y_i$ 为公式1中给出， $+x_i$ 表示残差链接。</p>
+<p>$W_z$ 实际上是一个卷积操作，它的输出channel数跟x一致。这样以来，non-local操作就可以作为一个组件，组装到任意卷积神经网络中。</p>
+<p>如果按照上面的公式，用for循环实现肯定是很慢的。此外，如果在尺寸很大的输入上应用non-local layer，也是计算量很大的。后者的解决方案是，只在高阶语义层中引入non-local layer。还可以通过对 $embedding(\theta,\phi)$ 的结果加pooling层来进一步地减少计算量。</p>
+<p>对于前者，注意到f的计算可以化为矩阵运算，我们实际上可以将整个non-local化为矩阵乘法运算+卷积运算。如下图所示，其中oc为output_channels，卷积操作的输出filter数量。</p>
+<p><img src="/2020/04/15/non-local/figure1.png" style="zoom:50%;"><br>在tensorflow和pytorch中，batch matrix multiplication可以用matmul函数实现。在keras中，可以用batch_dot函数或者dot layer实现。</p>
+<p><img src="/2020/04/15/non-local/figure2.png" style="zoom:50%;"></p>
+<p>作者在这里设置T=4 H=W=14或者7 ，所以其处理的long-range只有4，对于长序列问题应该效果不好。</p>
+<p>将non-local block嵌入I3D，在没有长序列action上有明显提升。</p>
+<p><img src="/2020/04/15/non-local/figure3.png" style="zoom:50%;"></p>
+<h4 id="Details-and-Expriments"><a href="#Details-and-Expriments" class="headerlink" title="Details and Expriments"></a>Details and Expriments</h4><p>需要的时候再细看….</p>
+]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>C3D</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>review of video analysis</title>
+    <url>/2020/03/29/review-of-video-analysis/</url>
+    <content><![CDATA[<h3 id="video-analysis-四个流派："><a href="#video-analysis-四个流派：" class="headerlink" title="video analysis 四个流派："></a>video analysis 四个流派：</h3><p>本文多处转载<a href="https://zhuanlan.zhihu.com/wzmsltw" target="_blank" rel="noopener">https://zhuanlan.zhihu.com/wzmsltw</a></p>
+<h4 id="这里主要是对待分割好的视频片段，对于未分割的长视频，在之后的Temporal-Action-detection（Temporal-Action-Localization）中"><a href="#这里主要是对待分割好的视频片段，对于未分割的长视频，在之后的Temporal-Action-detection（Temporal-Action-Localization）中" class="headerlink" title="这里主要是对待分割好的视频片段，对于未分割的长视频，在之后的Temporal Action detection（Temporal Action Localization）中"></a>这里主要是对待分割好的视频片段，对于未分割的长视频，在之后的Temporal Action detection（Temporal Action Localization）中</h4><ol>
+<li>2-stream，结合光流和RGB，RGB支路可以是2D CNN 也可以是I3D</li>
+<li>3D CNN，卷积核多出时序上的维度，spatial-temporal 建模，变形是时空分离的伪3d、(2+1)D等</li>
+<li>时序信息用RNN建模</li>
+<li>传统方法，先进行密集跟踪点采样（角点提取/背景去除），对密集采样点进行光流计算获取一定帧长的轨迹，沿着轨迹进行一些如SIFT/HOG的特征提取，NIPS2018有一篇轨迹卷积将以上过程NN化。</li>
+</ol>
+<a id="more"></a>
+<h2 id="任务特点及分析"><a href="#任务特点及分析" class="headerlink" title="任务特点及分析"></a><strong>任务特点及分析</strong></h2><p><strong>目的</strong></p>
+<p>给一个视频片段进行分类，类别通常是各类人的动作</p>
+<p><strong>特点</strong></p>
+<p>简化了问题，一般使用的数据库都先将动作分割好了，一个视频片断中包含一段明确的动作，时间较短（几秒钟）且有唯一确定的label。所以也可以看作是输入为视频，输出为动作标签的多分类问题。此外，动作识别数据库中的动作一般都比较明确，周围的干扰也相对较少（不那么real-world）。有点像图像分析中的Image Classification任务。</p>
+<p><strong>难点/关键点</strong></p>
+<ul>
+<li>强有力的特征：即如何在视频中提取出能更好的描述视频判断的特征。特征越强，模型的效果通常较好。</li>
+<li>特征的编码（encode）/融合（fusion）：这一部分包括两个方面，第一个方面是非时序的，在使用多种特征的时候如何编码/融合这些特征以获得更好的效果；另外一个方面是时序上的，由于视频很重要的一个特性就是其时序信息，一些动作看单帧的图像是无法判断的，只能通过时序上的变化判断，所以需要将时序上的特征进行编码或者融合，获得对于视频整体的描述。</li>
+<li>算法速度：虽然在发论文刷数据库的时候算法的速度并不是第一位的。但高效的算法更有可能应用到实际场景中去。</li>
+</ul>
+<h3 id="常见数据库"><a href="#常见数据库" class="headerlink" title="常见数据库"></a>常见数据库</h3><p>在mark.md中</p>
+<h2 id="研究进展"><a href="#研究进展" class="headerlink" title="研究进展"></a><strong>研究进展</strong></h2><h2 id="一-传统方法"><a href="#一-传统方法" class="headerlink" title="(一) 传统方法"></a>(一) 传统方法</h2><p>iDT（improved dense trajectories)特征：”Action recognition with improved trajectories”</p>
+<ul>
+<li>iDT方法（13年）是深度学习进入该领域前效果最好，稳定性最好，可靠性最高的方法，不过算法速度很慢。这个方法是该实验室之前工作（Dense Trajectories and Motion Boundary Descriptors for Action Recognition）的改进。此前写的笔记见<a href="https://link.zhihu.com/?target=http%3A//blog.csdn.net/wzmsltw/article/details/53023363">行为识别笔记：improved dense trajectories算法（iDT算法）</a>，算法代码分析见：<a href="https://link.zhihu.com/?target=http%3A//blog.csdn.net/wzmsltw/article/details/53221179">行为识别笔记：iDT算法用法与代码解析 </a>。</li>
+<li>基本思路：DT算法的基本思路为利用光流场来获得视频序列中的一些轨迹，再沿着轨迹提取HOF，HOG，MBH，trajectory4种特征，其中HOF基于灰度图计算，另外几个均基于dense optical flow（密集光流）计算。最后利用FV（Fisher Vector）方法对特征进行编码，再基于编码结果训练SVM分类器。而iDT改进的地方在于它利用前后两帧视频之间的光流以及SURF关键点进行匹配，从而消除/减弱相机运动带来的影响，改进后的光流图像被成为warp optical flow</li>
+</ul>
+<p><img src="https://pic1.zhimg.com/80/v2-91302ab8154687386aa542bdbd91cdc8_1440w.jpg" alt="img"></p>
+<p>“Action Recognition with Stacked Fisher Vectors”</p>
+<ul>
+<li>基于iDT方法的改进效果最好的应该是这篇文章。使用了两层的fv编码，笔记见<a href="https://link.zhihu.com/?target=http%3A//blog.csdn.net/wzmsltw/article/details/52050112">行为识别笔记：Stacked Fisher Vector基本原理</a></li>
+</ul>
+<h2 id="二-深度学习方法"><a href="#二-深度学习方法" class="headerlink" title="(二) 深度学习方法"></a>(二) 深度学习方法</h2><p><strong>(1) Two Stream Network及衍生方法</strong></p>
+<p>“Two-Stream Convolutional Networks for Action Recognition in Videos”（2014NIPS）</p>
+<ul>
+<li>Two Stream方法最初在这篇文章中被提出，基本原理为对视频序列中每两帧计算密集光流，得到密集光流的序列（即temporal信息）。然后对于视频图像（spatial）和密集光流（temporal）分别训练CNN模型，两个分支的网络分别对动作的类别进行判断，最后直接对两个网络的class score进行fusion（包括直接平均和svm两种方法），得到最终的分类结果。注意，对与两个分支使用了相同的2D CNN网络结构，其网络结构见下图。</li>
+<li>实验效果：UCF101-88.0%，HMDB51-59.4%</li>
+</ul>
+<p><img src="https://pic2.zhimg.com/80/v2-1517ba0a263dc339a25a24c026464961_1440w.png" alt="img"></p>
+<p>”Convolutional Two-Stream Network Fusion for Video Action Recognition“（2016CVPR）</p>
+<ul>
+<li>这篇论文的主要工作为在two stream network的基础上，利用CNN网络进行了spatial以及temporal的融合，从而进一步提高了效果。此外，该文章还将基础的spatial和temporal网络都换成了VGG-16 network。</li>
+<li>实验效果：UCF101-92.5%，HMDB51-65.4%</li>
+</ul>
+<p><img src="/2020/03/29/review-of-video-analysis/1.png" alt="img" style="zoom:50%;"></p>
+<h4 id="Temporal-Segment-Networks-Towards-Good-Practices-for-Deep-Action-Recognition"><a href="#Temporal-Segment-Networks-Towards-Good-Practices-for-Deep-Action-Recognition" class="headerlink" title="Temporal Segment Networks: Towards Good Practices for Deep Action Recognition"></a>Temporal Segment Networks: Towards Good Practices for Deep Action Recognition</h4><p>1、该论文就是所谓的TSN</p>
+<p>2、将输入viedeo分成多个segments，从每个segments中提取short snippets，将选择的snippets通过two-stream卷积神经网络得到不同snippets的class scores,最后将它们融合。</p>
+<p>3、空间stream卷积神经网络作用在single RGB images，时间stream卷积神经网络以stacked optical flow field 作为输入</p>
+<p>以下为转载：</p>
+<ul>
+<li>这篇文章是港中文Limin Wang大神的工作，他在这方面做了很多很棒的工作，可以followt他的主页：<a href="https://link.zhihu.com/?target=http%3A//wanglimin.github.io/">Limin Wang</a> 。</li>
+<li>这篇文章提出的TSN网络也算是spaital+temporal fusion，结构图见上图。这篇文章对如何进一步提高two stream方法进行了详尽的讨论，主要包括几个方面（完整内容请看原文）：</li>
+</ul>
+<ol>
+<li><p>输入数据的类型：除去two stream原本的RGB image和 optical flow field这两种输入外，这篇文章中还尝试了RGB difference及 warped optical flow field两种输入。最终结果是 RGB+optical flow+warped optical flow的组合效果最好。</p>
+</li>
+<li><p>网络结构：尝试了GoogLeNet,VGGNet-16及BN-Inception三种网络结构，其中BN-Inception的效果最好。</p>
+</li>
+<li><p>训练策略：包括 跨模态预训练，正则化，数据增强等。</p>
+</li>
+</ol>
+<ul>
+<li>实验效果：UCF101-94.2%，HMDB51-69.4%</li>
+</ul>
+<h4 id="Summary"><a href="#Summary" class="headerlink" title="Summary"></a>Summary</h4><p>该two stream的方法，更多涉及到optical flow，将optical flow作为其temporal dim，然后spatial 就普通CNN ，这类方法的局限其一就是optical flow如何得到，其二是过程较为复杂，cost较大。精度也并非很好。</p>
+<p><strong>(2) C3D Network</strong></p>
+<p>“Learning spatiotemporal features with 3d convolutional networks”</p>
+<ul>
+<li>C3D是facebook的一个工作，采用3D卷积和3D Pooling构建了网络。论文笔记见：<a href="https://link.zhihu.com/?target=http%3A//blog.csdn.net/wzmsltw/article/details/61192243">行为识别笔记：C3D network-用于视频特征提取的3维卷积网络</a> 。通过3D卷积，C3D可以直接处理视频（或者说是视频帧的volume）</li>
+<li>实验效果：UCF101-85.2% 可以看出其在UCF101上的效果距离two stream方法还有不小差距。我认为这主要是网络结构造成的，C3D中的网络结构为自己设计的简单结构，如下图所示。</li>
+<li>速度：C3D的最大优势在于其速度，在文章中其速度为314fps。而实际上这是基于两年前的显卡了。用Nvidia 1080显卡可以达到600fps以上。所以C3D的效率是要远远高于其他方法的，个人认为这使得C3D有着很好的应用前景。</li>
+</ul>
+<p><img src="/2020/03/29/review-of-video-analysis/2.png" alt="img" style="zoom:50%;"></p>
+<p>作者在其项目主页：<a href="https://link.zhihu.com/?target=http%3A//vlg.cs.dartmouth.edu/c3d/">C3D: Generic Features for Video Analysis</a> 放出了新版本的Res-C3D网络的caffe模型，但论文还没放出，估计是ICCV2017的投稿文章。新版本的模型大小是之前的一半，速度比C3D快了很多，效果也比之前提高了几个百分点（UCF上）。非常期待看到这个论文，等放出后也会好好写博客讨论一下的。</p>
+<h2 id="重点"><a href="#重点" class="headerlink" title="重点"></a>重点</h2><p>但是对于C3D的计算量真的很大，所以这一方面这一两年着重于，如何用2D CNN来近似C3D，最近比较有意义的方法有 P3D和 coST：《Collaborative Spatiotemporal Feature Learning for Video Action Recognition》</p>
+<p>交替channel进行motion 建模：</p>
+<p>TSM: Temporal Shift Module for Efficient Video Understanding</p>
+<p>这一方面的话，我个人认为是目前比较有实际意义的实现方向。</p>
+]]></content>
+      <categories>
+        <category>video analysis</category>
+      </categories>
+      <tags>
+        <tag>Video analysis review</tag>
+      </tags>
+  </entry>
+</search>

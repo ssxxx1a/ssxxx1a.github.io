@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"colorfulsolitude.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Abstract目前的方法基本来说，不是分别学习空间和时间特征（C2D）就是与无拘束的参数（C3D）一起学习。 本文作者提出的一个operation，通过可学习的weigth-sharing 约束来encode 协同编码时空特征。 特别的  沿着体积视频数据的三个正交视图执行2D卷积，其分别学习空间外观和时间运动信息。 由于共享不同视角（坐标系视角）的卷积核参数，可以同时学习空间与时间的协同相关性">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Collaborative Spatiotemporal Feature Learning for Video Action Recognition">
+<meta property="og:url" content="http://colorfulsolitude.cn/2020/04/09/CoST/index.html">
+<meta property="og:site_name" content="colorfulsolitude">
+<meta property="og:description" content="Abstract目前的方法基本来说，不是分别学习空间和时间特征（C2D）就是与无拘束的参数（C3D）一起学习。 本文作者提出的一个operation，通过可学习的weigth-sharing 约束来encode 协同编码时空特征。 特别的  沿着体积视频数据的三个正交视图执行2D卷积，其分别学习空间外观和时间运动信息。 由于共享不同视角（坐标系视角）的卷积核参数，可以同时学习空间与时间的协同相关性">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/Cost_figure1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure2.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure3.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure4.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure5.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure6.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure7.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure8.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/figure9.png">
+<meta property="article:published_time" content="2020-04-09T13:17:03.000Z">
+<meta property="article:modified_time" content="2020-04-24T03:31:12.434Z">
+<meta property="article:author" content="后空翻的咸鱼">
+<meta property="article:tag" content="C3D">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://colorfulsolitude.cn/2020/04/09/CoST/Cost_figure1.png">
+
+<link rel="canonical" href="http://colorfulsolitude.cn/2020/04/09/CoST/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Collaborative Spatiotemporal Feature Learning for Video Action Recognition | colorfulsolitude</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">colorfulsolitude</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://colorfulsolitude.cn/2020/04/09/CoST/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="后空翻的咸鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="colorfulsolitude">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Collaborative Spatiotemporal Feature Learning for Video Action Recognition
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-04-09 21:17:03" itemprop="dateCreated datePublished" datetime="2020-04-09T21:17:03+08:00">2020-04-09</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-24 11:31:12" itemprop="dateModified" datetime="2020-04-24T11:31:12+08:00">2020-04-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/video-analysis/" itemprop="url" rel="index"><span itemprop="name">video analysis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/04/09/CoST/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/04/09/CoST/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>3.3k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h4><p>目前的方法基本来说，不是分别学习空间和时间特征（C2D）就是与无拘束的参数（C3D）一起学习。 本文作者提出的一个operation，通过可学习的weigth-sharing 约束来encode 协同编码时空特征。 <strong>特别的</strong>  沿着体积视频数据的三个正交视图执行2D卷积，其分别学习空间外观和时间运动信息。 由于共享不同视角（坐标系视角）的卷积核参数，可以同时学习空间与时间的协同相关性，所以有利于提升性能。此外，通过不同视角的学习系数，可以量化空间与时间特征的作用。</p>
+<a id="more"></a>
+<h4 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h4><p>视频动作的重点在于，spatiotemporal feature的学习，即如何表示时空呢？ spatial feature 主要描述动作中涉及到的objects的外表与每一帧之中的场景结构。</p>
+<p>由于spatial feature近似与image识别，所以可以通过CNN直接提取。</p>
+<p>temporal feature 可以获取随时间变化的frames中的motion cues</p>
+<p>所以就有两个问题：</p>
+<ol>
+<li>如何学习temporal feature？</li>
+<li>如何很好的聚合spatial feature和temporal feature</li>
+</ol>
+<p>所以之前的研究</p>
+<p>第一个想法就是，model temporal feature information 以及并行输入spatial inforamtion， 即two stream 思路。将原始frame和相邻帧的optical flow整合在一起作为输入。</p>
+<p>第二个想法就是，使用3D CNN（C3D）这样的话，spatial feature 和temporal feature是绑定在一起共同学习的。但是C3D的计算量是很大的问题。</p>
+<p>论文提出的方法：Collaborative SpatioTemporal (CoST) 的特征学习操作，可以通过权值共享约束来学习时空信息。给定一个3D video tensor，可以将其挤压成2D image 通过不同的视角。</p>
+<p>如下图所示：</p>
+<p><img src="/2020/04/09/CoST/Cost_figure1.png" alt="figure1" style="zoom:50%;"></p>
+<p>上图中的H-W是人类的natural view，该图像的随时间变化图可以让我们很好理解。 虽然T-W 和T-H 对于人类来说很难理解，但其中包含的信息量与W-H相同。</p>
+<p>更重要的是，丰富的motion information是嵌入在每一帧之中，而不是相邻帧。因此T-W和T-H的帧上的2D CNN 可以捕获到时间information。</p>
+<p>尤其有一点，不同view的卷积核共享由于以下几个原因：</p>
+<ol>
+<li>不同view的可视化图是compatible（兼容的？）eg：T-H和T-W也有共同spatial pattern，比如边缘和颜色斑点。因此相同的卷积核 集合可以适用于不同view。</li>
+<li>没有剪枝的C2D本身就有内在冗余。而冗余核可以通过权值共享的方式进行时间特征学习。</li>
+<li>大量减少参数可以提升速度与防止过拟合。此外，使用静态图像的时间特征学习（很ok的网络架构和预训练）可以很简单的迁移至时间域。</li>
+</ol>
+<p>不同view的互补的特征可以通过weight summation来进行聚合。</p>
+<p>Cost相比较于C2D，可以学习到时空特征，同时相比较于3D，又是基于2D 来进行实现的。Cost是介于2D和3D之间的方法了，其作为聚合C2D同时有C3D的表征能力。主要贡献如下：</p>
+<ol>
+<li>提出Cost，使用2D 卷积来进行协同学习时空特征。</li>
+<li>首次对时间特征与空间特征重要性进行量化分析</li>
+<li>超过C3D一类的model，sota效果。</li>
+</ol>
+<h4 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h4><ol>
+<li>hand-crafted：STIP，SIFT-3D、Spatiotemporal SIFT、3D Histogram of Gradient、iDT</li>
+<li>two stream：optical flow + visual frames</li>
+<li>sequence CNN： LSTM、ConvLSTM等</li>
+<li>C3D：C3D、P3D、（2+1）D、LGD</li>
+<li>closely model： Slicing CNN </li>
+</ol>
+<h4 id="Method"><a href="#Method" class="headerlink" title="Method"></a>Method</h4><p><a href="https://zhuanlan.zhihu.com/p/111704731" target="_blank" rel="noopener">Cost转载该知乎</a></p>
+<p><strong>CoST:</strong></p>
+<p>(1)下图对比CoST操作和C3D(3×3×3) 和C3D(3×1×1),C3D(3×3×3)利用3D卷积把时间和空间特征联合提取出来，C3D(3×1×1)首先用的卷积提取时间上的特征，然后用(1×3×1)的卷积提取空间特征。作者用3个3×3的2D卷积核从三个视角分别进行卷积操作，然后通过加权求和将三个特征图进行融合，需要注意的是，这里三个卷积核参数是共享的。</p>
+<p><img src="/2020/04/09/CoST/figure2.png" style="zoom:50%;"></p>
+<p>(2)输入的的X是T×H×W×C1，C是输入特征的通道，三个视角的卷积操作可以表示为：</p>
+<p><img src="/2020/04/09/CoST/figure1.png" style="zoom:50%;"></p>
+<p>其中⊗表示3D卷积操作，w是增加一个维度的三个视角的共享参数。</p>
+<p>这里的卷积可以理解为：对于H-W视角，把H-W看做一个平面，T看做是平面的堆叠，其中每一个平面有C1个通道。如果单独的看一个平面，只对一个平面进行卷积操作，则卷积核的大小为C1<em>3</em>3，卷积结果大小为H×W。从视角出发，共有T个这样的平面，则所用的平面进行卷积之后，大小为T×H×W。因为一共用C2个卷积核，所以经过卷积之后特征图的大小为T×H×W×C2.上述的公式中忽略了平面的通道数C1.</p>
+<p>Tips:这里有个问题，关于维度呢，H-W看作T个堆叠，那么H-T就要看做W个堆叠，卷积计算维度对的上吗？</p>
+<p>得到三个视角的特征后，对其进行加权求和得到该层的最终输出：</p>
+<p><img src="/2020/04/09/CoST/figure3.png" style="zoom:50%;"></p>
+<p>α=[αhw,αtw,αth],其中α是一个C2×3大小的矩阵，其中3表示三个视角，C2表示得到特征图的通道数。为了避免从多个视图得到的响应发生巨大的爆炸，用softmax对α进行归一化处理。</p>
+<p>(3)作者设计两种CoST结构，如图所示：</p>
+<p><img src="/2020/04/09/CoST/figure4.png" style="zoom:50%;"></p>
+<p>其中系数α被认为是模型参数的一部分，在训练的时候，反向传播进行更新。当进行识别的时候参数是固定的。</p>
+<p><strong>CoST(b):</strong> </p>
+<p><img src="/2020/04/09/CoST/figure5.png" style="zoom:50%;"></p>
+<p>系数α是基于特征被网络预测得到的，这个设计灵感来源于self-attention。每个样本的系数值取决于样本自己。首先用全局pooling将三个视角的特征pooling为1<em>1</em>1，然后用1*1×1的卷积核进行卷积，这里的参数是共享的，接下来拼接在一起然后送入到全连接层，最后用softmax进行归一化处理。</p>
+<h4 id="Connection-to-C2D-and-C3D"><a href="#Connection-to-C2D-and-C3D" class="headerlink" title="Connection to C2D and C3D"></a>Connection to C2D and C3D</h4><p>如果T-W和T-H值为0，那么相当于2D CNN。</p>
+<p>3D 卷积包含 $ k^3 $ 的参数，同时其感受野区域为 $ k^3 $ 其中 $ k $ 为卷积核大小。同样的，CoST包含的感受野区域为 $ 3k^3-3k+1 $  (消除掉边角部分)如图所示：</p>
+<p><img src="/2020/04/09/CoST/figure6.png" style="zoom:50%;"></p>
+<h4 id="Ablation-Study"><a href="#Ablation-Study" class="headerlink" title="Ablation Study"></a>Ablation Study</h4><ol>
+<li>没有weights shared 的效果更差，约1%的误差</li>
+<li>C3D 一直比C2D好，同时CoST比C3D好，如下图所示：</li>
+</ol>
+<p><img src="/2020/04/09/CoST/figure7.png" style="zoom:50%;"></p>
+<p>与sota的方法对比，其中对输入的temporal 进行修改。</p>
+<p><img src="/2020/04/09/CoST/figure8.png" style="zoom:50%;"></p>
+<h4 id="Importance-of-Defferent-Views"><a href="#Importance-of-Defferent-Views" class="headerlink" title="Importance of Defferent Views"></a>Importance of Defferent Views</h4><p>通过研究学习系数的大小，我们能够量化不同view的贡献。具体来说，对于每一CoST的层，在验证集上计算每个视图的平均系数。H-W视图的平均系数衡量的是外观特征的重要性，而T-W和T-H视图的平均系数衡量的是时间运动线索的重要性。</p>
+<p>通过计算各个view的CoST layers的平均系数，则可以量化其重要性，其中在Moments in Time数据集上H-W、T-W、T-H分别是0.67，0.14，0.19，在Kinetics上为0.77，0.08，0.15.所以可以了解到，其中spatial feature占主导成分。</p>
+<p><img src="/2020/04/09/CoST/figure9.png" style="zoom:50%;"></p>
+<p>该图为对应的量化贡献，可以看到随着越后面的层次，其temporal feature逐渐越来越重要，所以其实有一个初步理解，在实现过程中，temporal的表示，在high-level要比low-level要强。</p>
+<p>同时关于不同的action ，时间序列信息的重要性也不同，比如landing中temporal的重要性就要比interviewing高。</p>
+<h4 id="Discussion-and-Conclusion"><a href="#Discussion-and-Conclusion" class="headerlink" title="Discussion and Conclusion"></a>Discussion and Conclusion</h4><ol>
+<li>是否有更好的时间信息表示的方法呢？比如将时间信息投射到比如depth的spatial dims上？</li>
+<li>在图一种到不同view，如何学习其中的协同信息？</li>
+<li>本文提出的方法，其通过设计好的网络结构和weights share可以共享不同view之间的信息。在物理学中，Minkowski spacetime 表示，3维空间和1维时间能够统一为一个4维度连续体。本文的发现或许一定程度上可以解释表征学习带有上下文信息的时空模型。</li>
+</ol>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/C3D/" rel="tag"># C3D</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/29/review-of-video-analysis/" rel="prev" title="review of video analysis">
+      <i class="fa fa-chevron-left"></i> review of video analysis
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/04/15/non-local/" rel="next" title="Non-local neural networks">
+      Non-local neural networks <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Related-Work"><span class="nav-number">3.</span> <span class="nav-text">Related Work</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Method"><span class="nav-number">4.</span> <span class="nav-text">Method</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Connection-to-C2D-and-C3D"><span class="nav-number">5.</span> <span class="nav-text">Connection to C2D and C3D</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Ablation-Study"><span class="nav-number">6.</span> <span class="nav-text">Ablation Study</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Importance-of-Defferent-Views"><span class="nav-number">7.</span> <span class="nav-text">Importance of Defferent Views</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Discussion-and-Conclusion"><span class="nav-number">8.</span> <span class="nav-text">Discussion and Conclusion</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="后空翻的咸鱼"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">后空翻的咸鱼</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssxxx1a" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssxxx1a" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/HZ.arthur.418@gmail.com" title="E-Mail → HZ.arthur.418@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">后空翻的咸鱼</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">33k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">30 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'dhmmdNrBORpHakm4st8M2xQu-gzGzoHsz',
+      appKey     : 'ukeGbvWB9PpLvemzUSDIbUan',
+      placeholder: "这里留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

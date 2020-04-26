@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"colorfulsolitude.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Abstract主要解决的是自然场景下的弯曲文本检测，方法为将弯曲text region 矫正，然后进行recognition。  The multi-object rectification network is designed for rectifying images that contain irregular text. It is trained in a weak supervis">
+<meta property="og:type" content="article">
+<meta property="og:title" content="MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition">
+<meta property="og:url" content="http://colorfulsolitude.cn/2020/03/04/MORAN/index.html">
+<meta property="og:site_name" content="colorfulsolitude">
+<meta property="og:description" content="Abstract主要解决的是自然场景下的弯曲文本检测，方法为将弯曲text region 矫正，然后进行recognition。  The multi-object rectification network is designed for rectifying images that contain irregular text. It is trained in a weak supervis">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Figure2.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Figure4.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Figure3.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Table1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/equation1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/equation.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Table2.png">
+<meta property="article:published_time" content="2020-03-04T06:39:16.000Z">
+<meta property="article:modified_time" content="2020-04-24T03:31:07.798Z">
+<meta property="article:author" content="后空翻的咸鱼">
+<meta property="article:tag" content="rectify method">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://colorfulsolitude.cn/2020/03/04/MORAN/Figure2.png">
+
+<link rel="canonical" href="http://colorfulsolitude.cn/2020/03/04/MORAN/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition | colorfulsolitude</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">colorfulsolitude</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://colorfulsolitude.cn/2020/03/04/MORAN/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="后空翻的咸鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="colorfulsolitude">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-04 14:39:16" itemprop="dateCreated datePublished" datetime="2020-03-04T14:39:16+08:00">2020-03-04</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-24 11:31:07" itemprop="dateModified" datetime="2020-04-24T11:31:07+08:00">2020-04-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ocr/" itemprop="url" rel="index"><span itemprop="name">ocr</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/03/04/MORAN/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/03/04/MORAN/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>3 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>主要解决的是自然场景下的弯曲文本检测，方法为将弯曲text region 矫正，然后进行recognition。</p>
+<ol>
+<li>The multi-object rectification network is designed for rectifying images that contain irregular text.</li>
+<li>It is trained in a weak supervision way, thus requiring only images and corresponding text labels. </li>
+<li>a fractional pickup method is proposed for an attention-based decoder in the training phase.</li>
+</ol>
+<a id="more"></a>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><ol>
+<li><p>MORAN，可读取rotated 、scaled 、stretched 的字符并处理</p>
+</li>
+<li><p>MORAN包含，MORN（multi-object rectification network）和ASRN（attention-based sequence recogntion）</p>
+</li>
+<li><p>过程分为两步骤：</p>
+<p><code>(1)MORN做空间变换，MORN将图片中的不规则文本区域进行矫正</code></p>
+<p><code>(2)ASRN 将纠正后的图像作为input 进行识别文本</code></p>
+</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Figure2.png" alt="Figure2" style="zoom:50%;"></p>
+<h3 id="重点"><a href="#重点" class="headerlink" title="重点"></a>重点</h3><p><strong>The training of the MORN is guided by the ASRN, which requires only text labels</strong>  由ASRN的指导训练MORN？如何做？</p>
+<p>没有任何geometric-level和pixel-level的监督训练，即在图像上没有变化的label（coordinates） 训练是weak supervision的</p>
+<h4 id="MORN"><a href="#MORN" class="headerlink" title="MORN"></a>MORN</h4><ol>
+<li>初始化一个coordinate grid（坐标网格）每个pixel都有其位置坐标。</li>
+<li>MORN基于这些坐标学习生成一个offset grid（偏移网格），然后对这些pixel进行采样来矫正图像。<strong>（矫正图像rectified image由ASRN来获得）</strong></li>
+</ol>
+<h4 id="ASRN"><a href="#ASRN" class="headerlink" title="ASRN"></a>ASRN</h4><ol>
+<li>显然矫正过的规则文字更有利于识别</li>
+<li>由于存在的attention-based的方法无法准确的取得 feature areas和target的对准，所以提出了一个 fractional pickup method方法来train ASRN：通过在feature map的不同部分采用若干尺度的拉伸在train 过程中的每次迭代都对feature areas有随机变化，所以ASRN更为robust</li>
+</ol>
+<h4 id="curriculum-learning-strategy"><a href="#curriculum-learning-strategy" class="headerlink" title="curriculum learning strategy"></a>curriculum learning strategy</h4><p>由于前面说到的MORN和ASRN的train是相互作用的，所以首先fix其中一个，对另外一个更为有效。</p>
+<h3 id="contribution"><a href="#contribution" class="headerlink" title="contribution"></a>contribution</h3><ol>
+<li>MORAN可识别irregular scene text</li>
+<li>MORN is flexible ，trained in a weak supervision way</li>
+<li>提出一个fractional pickup method来训练ASRN ，同时拓展一个visual field 方法来展示MORAN</li>
+<li>提出一个curriculum learning strategy 方法来使MORAN学习的更为有效</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Figure4.png" alt="FIgure4" style="zoom:50%;"></p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>pass</p>
+<h3 id="Methodology"><a href="#Methodology" class="headerlink" title="Methodology"></a>Methodology</h3><p>分为两步，MORN来学习这个offset of each part of the image</p>
+<p>ASRN 是一个CNN-LSTM 带有attention的decoder架构。</p>
+<h4 id="MORN-1"><a href="#MORN-1" class="headerlink" title="MORN"></a>MORN</h4><ol>
+<li><p>Common methods to recitify patterns scuh as affine transformation network.受限于certain geometric constraints（即空间几何限制（pix之间的空间关系不变））</p>
+<p><img src="/2020/03/04/MORAN/Figure3.png" alt="Figure3" style="zoom:50%;"></p>
+</li>
+<li><p>free of geometric constraints 这里用deformable cnn效果不好（由于识别模型在处理各种形状的多次干扰时仍然不够强，因此我们考虑对图像进行校正以降低识别的难度）</p>
+</li>
+<li><p>MORN预测的是字符的位置偏移量，而不是字符的类别。用于分类的字符详细信息是不必要的。因此，将池化层置于卷积层之前，以避免噪声并减少计算量。</p>
+</li>
+</ol>
+<p><img src="/2020/03/04/MORAN/Table1.png" alt="Table1" style="zoom:50%;"></p>
+<p><strong>MORN 架构：</strong></p>
+<ol>
+<li>第一步将图片分割为多个parts（分为3*11 =33 parts）</li>
+<li>用tanh来激活offset的值，将其归约到（-1，1）范围内。</li>
+<li>offset map有两个channels，分别表示x坐标和y坐标。</li>
+<li>最后通过双线性插值进行上采样，将图片变为原本size。</li>
+<li>将特定的偏移量分配到每个像素后，图像的转换是smooth的。在Figure3的heat map中，红色和蓝色边界两边的颜色深度逐渐变化，说明了校正的平稳性。矫正后的图像没有锯齿状的边缘。</li>
+</ol>
+<p>question：这个MORN如何训练？（下文有详细介绍）</p>
+<p><strong>重构图</strong></p>
+<p>由MORN生成的 offset map是偏移图，所以有一个ori position map来进行对应。该map称为 basic grid。其左上角坐标为(-1,1)右下角为(1,1) 。不同channels但在同一个position的pixel有相同的坐标。</p>
+<p><strong>tips：将两个channels分别存储 x和y 的像素值</strong> </p>
+<p>所以变换后的坐标就是：</p>
+<p><img src="/2020/03/04/MORAN/equation1.png" alt="equation1" style="zoom:50%;"></p>
+<p>在sampling的时候再将offset map 反normalization到 $[0,W] [0,H]$ 上,pixel value就将其通道值取出即可：</p>
+<p><img src="/2020/03/04/MORAN/equation.png" alt="equation" style="zoom:50%;"></p>
+<p><strong>(此处省略一大段作者吹MORN的描述哈哈哈)</strong> </p>
+<p>然后对应ASRN，用上了LSTM+GRU来实现该NET。</p>
+<p><img src="/2020/03/04/MORAN/Table2.png" alt="Table2" style="zoom:50%;"></p>
+<p>该处涉及NLP的，稍后再添加。</p>
+<h3 id="Curriculum-Training"><a href="#Curriculum-Training" class="headerlink" title="Curriculum Training"></a>Curriculum Training</h3><p>作者发现MORN和ASRN通过end2end train的时候相互冲突。所以其提出了一个叫做curriculum learning strategy来训练整个MORAN网络。其包括三个step(分别进行优化，然后再进行end 2 end train)</p>
+<p><strong>step 如下</strong>：</p>
+<ol>
+<li><p><strong>First Stage for ASRN</strong> : 首先用规则文本的训练样本来训练ASRN。然后通过Gupta发布的一个有紧密标注框的dataset。</p>
+<p>然后采用minimum circumscribed horizontal rectangle（也就是最优程度矩形来裁剪这样的一个文本图）来获得所谓的不规则的文本样本。</p>
+</li>
+<li><p><strong>second stage for MORN</strong>： 训练好这样一个ASRN之后，就有一个对规则文本识别效果很好的model。 但是这时候这个model对irregular的识别是很不robust的，所以可以提供一定信息的梯度。所以这时候固定住ASRN的weights，然后将ASRN stacked 在MORN之后，如果MORN没有reduce the difficulty of recogntion 那么ASRN就只会提供很有限的梯度。由此方法来进行训练MORN</p>
+<p><code>tips:也就是说，如果一张图片经过了MORN但是其识别效果和没有经过MORN的效果差不多，那么其关于ASRN提供的梯度就相当于没有（可以将固定weights的ASRN理解成一个layer</code></p>
+</li>
+<li><p><strong>Third Stage for end2end optimization</strong> 由前两步之后，再进行end2end 训练。</p>
+</li>
+</ol>
+<p>所以由此可以了解到MORAN的训练策略，则为所谓的weak supervision</p>
+<h4 id="Limitation-of-the-MORAN"><a href="#Limitation-of-the-MORAN" class="headerlink" title="Limitation of the MORAN"></a>Limitation of the MORAN</h4><p>在形变较大的时候，MORN的效果较差。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/rectify-method/" rel="tag"># rectify method</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/29/OFF/" rel="prev" title="Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition">
+      <i class="fa fa-chevron-left"></i> Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/18/Looking-Fast-and-Slow/" rel="next" title="Looking Fast and Slow,Memory-Guided Mobile Video Object Detection">
+      Looking Fast and Slow,Memory-Guided Mobile Video Object Detection <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#重点"><span class="nav-number">3.</span> <span class="nav-text">重点</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MORN"><span class="nav-number">3.1.</span> <span class="nav-text">MORN</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ASRN"><span class="nav-number">3.2.</span> <span class="nav-text">ASRN</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#curriculum-learning-strategy"><span class="nav-number">3.3.</span> <span class="nav-text">curriculum learning strategy</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#contribution"><span class="nav-number">4.</span> <span class="nav-text">contribution</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Related-work"><span class="nav-number">5.</span> <span class="nav-text">Related work</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Methodology"><span class="nav-number">6.</span> <span class="nav-text">Methodology</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#MORN-1"><span class="nav-number">6.1.</span> <span class="nav-text">MORN</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Curriculum-Training"><span class="nav-number">7.</span> <span class="nav-text">Curriculum Training</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Limitation-of-the-MORAN"><span class="nav-number">7.1.</span> <span class="nav-text">Limitation of the MORAN</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="后空翻的咸鱼"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">后空翻的咸鱼</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssxxx1a" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssxxx1a" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/HZ.arthur.418@gmail.com" title="E-Mail → HZ.arthur.418@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">后空翻的咸鱼</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">33k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">30 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'dhmmdNrBORpHakm4st8M2xQu-gzGzoHsz',
+      appKey     : 'ukeGbvWB9PpLvemzUSDIbUan',
+      placeholder: "这里留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

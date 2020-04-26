@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"colorfulsolitude.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Abstract1.提出了一个Optical Flow guided Feature(OFF)模块，可以用于video action recognition。直接理解，该模块可以直接计算deep feature maps的pixel-wise level的空间时序梯度。 2.可以使cnn来提取到空间时序信息（显著效果在frames间）。 3.cost小，同时acc不错。 4.开源 github地址">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition">
+<meta property="og:url" content="http://colorfulsolitude.cn/2020/02/29/OFF/index.html">
+<meta property="og:site_name" content="colorfulsolitude">
+<meta property="og:description" content="Abstract1.提出了一个Optical Flow guided Feature(OFF)模块，可以用于video action recognition。直接理解，该模块可以直接计算deep feature maps的pixel-wise level的空间时序梯度。 2.可以使cnn来提取到空间时序信息（显著效果在frames间）。 3.cost小，同时acc不错。 4.开源 github地址">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/figure1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/figure2.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/figure3.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/equation.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/figure4.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/equation2.png">
+<meta property="article:published_time" content="2020-02-29T08:12:19.000Z">
+<meta property="article:modified_time" content="2020-04-24T05:21:21.303Z">
+<meta property="article:author" content="后空翻的咸鱼">
+<meta property="article:tag" content="optical flow">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://colorfulsolitude.cn/2020/02/29/OFF/figure1.png">
+
+<link rel="canonical" href="http://colorfulsolitude.cn/2020/02/29/OFF/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition | colorfulsolitude</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">colorfulsolitude</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://colorfulsolitude.cn/2020/02/29/OFF/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="后空翻的咸鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="colorfulsolitude">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-29 16:12:19" itemprop="dateCreated datePublished" datetime="2020-02-29T16:12:19+08:00">2020-02-29</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-24 13:21:21" itemprop="dateModified" datetime="2020-04-24T13:21:21+08:00">2020-04-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/video-analysis/" itemprop="url" rel="index"><span itemprop="name">video analysis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/02/29/OFF/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/02/29/OFF/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>4.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>4 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h2><p>1.提出了一个Optical Flow guided Feature(OFF)模块，可以用于video action recognition。直接理解，该模块可以直接计算deep feature maps的pixel-wise level的空间时序梯度。</p>
+<p>2.可以使cnn来提取到空间时序信息（显著效果在frames间）。</p>
+<p>3.cost小，同时acc不错。</p>
+<p>4.开源 github地址：<a href="https://github.com/kevin-ssy/Optical-Flow-Guided-Feature" target="_blank" rel="noopener">开源地址</a></p>
+<a id="more"></a> 
+<h2 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h2><p>1.temporal information is the key ingredient of video action recognition</p>
+<p>2.提取dense optical flow 并不高效</p>
+<p>3.3D CNN（以RGB作为input）可以获取temporal information 但是其效果仍比不上two-stream 的方法</p>
+<p>4.two steam方法有(paper)：</p>
+<p><code>(1)Two-stream convolutional networks for action recognition in videos</code></p>
+<p><code>(2)Temporal segment networks: Towards good practices for deep action recognition.</code></p>
+<h4 id="Optical-Flow-guided-Feature"><a href="#Optical-Flow-guided-Feature" class="headerlink" title="Optical Flow guided Feature"></a>Optical Flow guided Feature</h4><p>1.从optical flow 的orthogonal space(正交空间) 定义一个新的特征表达</p>
+<p>2.该特征可从特征图中提取垂直方向和水平方向的spatial gradients，同时时间梯度（temporal gradients 通过不同frame之间的特征图来获得）</p>
+<p>3.全部操作都可微，即可bp。所以可将该模块直接嵌入cnn 架构进行训练。</p>
+<p>4.OFF的一个重要组成部分就是不同image/segments之间的feature 差异(两张图之间的运动信息用CNN直接提取)。shown in Fig 1</p>
+<p><img src="/2020/02/29/OFF/figure1.png" alt="Figure1" style="zoom:50%;"></p>
+<p>5.不同图像中的负值表示身体部分/物体消失的位置，而正值表示身体部分/物体出现的位置。  <strong>(由CNN提取)</strong></p>
+<p>6.时间差异可以进一步与空间梯度相结合。（稍后有推导）</p>
+<p>7.在feature map上做这个faster and rebust 原因：</p>
+<p><code>(1)它使空间和时间网络具有weights共享的能力</code></p>
+<p><code>(2)通过在原始帧中可靠地消除局部和背景噪声，深度学习的特征能传达更多的语义和鉴别表征。</code></p>
+<p>8.Two contribution:</p>
+<p><code>(1)OFF is a fast and robust motion representation. 200frames/s (only RGB as the input)</code></p>
+<p><code>(2)an OFF equipped network can be trained in an end-to-end fashion.</code></p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>1.a breakthrough in action recogntion is two-stream based on CNN（用CNN来学习hand-craft的feature）</p>
+<p>2.用3D CNN来提取motion information,但是依赖项相对较多（net arch，training sample，param regularization)，sota的3d CNN still rely on traditional optical flow来捕获motion patterns.</p>
+<p>3.comparision :</p>
+<p><code>OFF :</code></p>
+<p> <code>(1)RGB stream等同于two stream 方法</code></p>
+<p><code>(2)与optical flow这种motion representation 可以互补使用</code></p>
+<p>4.获取长时间段的时序信息，引入LSTM来编码sequence-illustrating features</p>
+<p>5.集成ranked pool方法的叫做dynamic image方法，是summarize 一连串frames的，但是OFF是直接或许motion information的。</p>
+<p><img src="/2020/02/29/OFF/figure2.png" alt="Figure2" style="zoom:50%;"></p>
+<h4 id="Optical-Flow-Guided-Feature"><a href="#Optical-Flow-Guided-Feature" class="headerlink" title="Optical Flow Guided Feature"></a>Optical Flow Guided Feature</h4><p>由传统光流的光强不变性限制（brightness constant constraint ）启发，其公式表示为:</p>
+<script type="math/tex; mode=display">
+I(x, y, t)=I(x+\Delta x, y+\Delta y, t+\Delta t) (1)</script><p>$I(x,y,t)$ : 坐标为 $(x,y)$ 的像素点在 $t$ 时刻，其在 $\Delta t$ 光强不变，所以当我们将该假设应用到feature level，就有:</p>
+<script type="math/tex; mode=display">
+f(I ; w)(x, y, t)=f(I ; w)(x+\Delta x, y+\Delta y, t+\Delta t) (2)</script><p>$f:$ 从image $I$ 中提取feature的映射函数。</p>
+<p>$w:$ 为 $f$ 的参数</p>
+<p>该paper 应用的conv block（conv layer +ReLU +pooling）</p>
+<p>设 $p=(x,y,t)$ ,根据optical flow的定义  <strong>(有这个定义嘛。。。?)</strong> 可得:</p>
+<script type="math/tex; mode=display">
+\frac{\partial f(I ; w)(p)}{\partial x} \Delta x+\frac{\partial f(I ; w)(p)}{\partial y} \Delta y+\frac{\partial f(I ; w)(p)}{\partial t} \Delta t=0 (3)</script><p>除以 $\Delta t$ 可得:</p>
+<script type="math/tex; mode=display">
+\frac{\partial f(I ; w)(p)}{\partial x} v_{x}+\frac{\partial f(I ; w)(p)}{\partial y} v_{y}+\frac{\partial f(I ; w)(p)}{\partial t}=0(4)</script><p>在 $p=(x,t,z)$  处，  $(v_x,x_y)$ 表示二维点点运动变量，对 $x,y $ 的偏导则是空间梯度(spatial gradients)，对 $t$ 的偏导则是单独在time 轴上的。</p>
+<p>作为一个特例，也就是当 $f(I;w)(p)=I(p)$ 时（即特征提取的后依然等于原像素点）则 $f(I;w)(p)$ 就是一个简单不变的表达，所以此时的 $(v_x,v_y)$ 就是所谓的 <strong><em>optical flow</em></strong> (常用求解equation 4这个优化问题来获得光流 ) </p>
+<p>关于 $\frac{\partial f(I ; w)(p)}{\partial t}$ 项，该表示 RGB frames之间的不同。由于之前的一些工作都没解释为什么从帧之间提取的temporal difference能够work，所以以下作者进行了解释：</p>
+<p> 将 pixel  $I(p)$  推广到feature $f(I;w)(p)$ .广义上将 $[v_x,v_y]$ 称之为feature flow. 我们可以由equation 4得到 :</p>
+<script type="math/tex; mode=display">
+\vec{F}(I ; w)(p)=\left[\frac{\partial f(I ; w)(p)}{\partial x}, \frac{\partial f(I ; w)(p)}{\partial y}, \frac{\partial f(I ; w)(p)}{\partial t}\right]</script><p> 是 $[v_x,v_y,1]$ 在feature level的optical flow 的正交。</p>
+<p>因此，$\vec{F}(I;w)(p)$  的变化等同于optical flow在feature level的变化。即可以将 $\vec{F}(I;w)(p)$ 叫做OFF。</p>
+<h3 id="Using-Optical-Flow-Guided-Feature-in-Con-volutional-Neural-Network"><a href="#Using-Optical-Flow-Guided-Feature-in-Con-volutional-Neural-Network" class="headerlink" title="Using Optical Flow Guided Feature in Con- volutional Neural Network"></a>Using Optical Flow Guided Feature in Con- volutional Neural Network</h3><h4 id="Network-Arch"><a href="#Network-Arch" class="headerlink" title="Network Arch"></a>Network Arch</h4><p>网络包含三个sub-network，分为三个部分：</p>
+<p>1.feature generation</p>
+<p>这个sub-network就是使用common的CNN结构来提取一层特征。</p>
+<p>2.OFF </p>
+<p>将feature generation得到的feature进一步的提取，然后采用resnet思路进行refine，其实这里应该就有点像是嵌套了一个unet网络？</p>
+<p>3.classfication </p>
+<p>将前两个sub-network的结果进行直接action recogntion<br><img src="/2020/02/29/OFF/figure3.png" alt="Figure3"></p>
+<p> <em>图3。网络架构概述为两个部分。输入分为蓝色和绿色两部分，分别输入到特征生成子网络中获取基本特征。在我们的实验中，每个特征生成子网络的主干是BN-Inception[34]。这里K表示所选取的经过OFF子网络获得OFF特征的正方形特征图的最大边长。OFF子网络由多个OFF单元组成，在不同分辨率的OFF单元之间连接多个残差块[15]。从整体上看，这些剩余的块体构成了一个ResNet-20。不同子网络得到的分数是独立监督的。OFF单元的详细结构如图4所示。</em></p>
+<h5 id="Feature-Generation-Sub-network"><a href="#Feature-Generation-Sub-network" class="headerlink" title="Feature Generation Sub-network"></a>Feature Generation Sub-network</h5><p>basic features  $f(I;w)$  使用简单CNN layer以及ReLU，max pooling，BN</p>
+<h5 id="OFF-Sub-network"><a href="#OFF-Sub-network" class="headerlink" title="OFF Sub-network"></a>OFF Sub-network</h5><ol>
+<li>多个OFF units</li>
+<li>不同units使用不同depth的 $f(I;w)$ </li>
+<li>每一层的OFF layer包含 $1 \times 1$ 卷积</li>
+<li>out的时候将这些unit全部concatenate起来</li>
+<li>OFF 包含时间和空间梯度</li>
+</ol>
+<p><code>此处无法渲染，故图片代替:</code></p>
+<p><img src="/2020/02/29/OFF/equation.png" alt="e1" style="zoom:50%;"></p>
+<p><img src="/2020/02/29/OFF/figure4.png" alt="Figure4" style="zoom:50%;"></p>
+<h5 id="Classfiication-Sub-network"><a href="#Classfiication-Sub-network" class="headerlink" title="Classfiication Sub-network"></a>Classfiication Sub-network</h5><p>1.多个内积分类器来进行计算多个分类分数。</p>
+<p>2.通过对每个特征生成子网络或OFF子网络进行平均，合并所有采样帧的分类分数。语义层次上的OFF可用于在训练阶段生成分类分数，分类分数通过相应的损失进行学习。</p>
+<p><img src="/2020/02/29/OFF/equation2.png" alt="equation2" style="zoom:50%;"></p>
+<h5 id="Two-stage-Training-Strategy"><a href="#Two-stage-Training-Strategy" class="headerlink" title="Two-stage Training Strategy"></a>Two-stage Training Strategy</h5><ol>
+<li><p>TSN一类来训练feature generation</p>
+</li>
+<li><p>固定权值然后进行下一步骤的train</p>
+</li>
+</ol>
+<h5 id="Intermediate-Supervision-during-Training"><a href="#Intermediate-Supervision-during-Training" class="headerlink" title="Intermediate Supervision during Training"></a>Intermediate Supervision during Training</h5><p>在训练过程中，对OFF训练采用一种中间监督的方法来提升其效果。</p>
+<h5 id="Reducinhg-the-Memory-Cost"><a href="#Reducinhg-the-Memory-Cost" class="headerlink" title="Reducinhg the Memory Cost"></a>Reducinhg the Memory Cost</h5><p>对帧进行采样，如果训练和测试之间采样不同数量的片段，那么片段之间的持续时间可能会有所不同。根据 equation 3的公式，只有 $\Delta t$ 是fixed变量，equation 4才可以成立，如果我们在train和test中采样不同frames，那么时间间隔就不一样，所以就会导致eqution 4不成立</p>
+<p><code>tips:此处大概意思就是，如果采样不采用相同频率，那么时间间隔t就是不一致的，所以会导致等式不成立.(多个变量了都)</code></p>
+<p>所以采样方式如下：</p>
+<p>设置 $\alpha$ 为训练采样的帧数，$\beta$ 为测试采样的。video长度 $L$ 将会被分割为 $\lfloor L / \beta\rfloor$ ，然后在如下公式中：</p>
+<script type="math/tex; mode=display">
+0,1, \ldots, L-1-(\alpha -1) *\lfloor L / \beta\rfloor</script><p>随机选择 $p$, 将p当成fream seed. 可得总的training set就是 :</p>
+<script type="math/tex; mode=display">
+\{p, p+\lfloor L / \beta\rfloor, \dots, p+(\alpha-1) *\lfloor L / \beta\rfloor\}</script><h4 id="ignore-the-network-test-and-experiments"><a href="#ignore-the-network-test-and-experiments" class="headerlink" title="ignore the network test and experiments"></a>ignore the network test and experiments</h4>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/optical-flow/" rel="tag"># optical flow</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/28/FOTS/" rel="prev" title="FOTS,Fast Oriented Text Spotting with a Unified Network">
+      <i class="fa fa-chevron-left"></i> FOTS,Fast Oriented Text Spotting with a Unified Network
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/04/MORAN/" rel="next" title="MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition">
+      MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Optical-Flow-guided-Feature"><span class="nav-number">2.0.1.</span> <span class="nav-text">Optical Flow guided Feature</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Related-work"><span class="nav-number">2.1.</span> <span class="nav-text">Related work</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Optical-Flow-Guided-Feature"><span class="nav-number">2.1.1.</span> <span class="nav-text">Optical Flow Guided Feature</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Using-Optical-Flow-Guided-Feature-in-Con-volutional-Neural-Network"><span class="nav-number">2.2.</span> <span class="nav-text">Using Optical Flow Guided Feature in Con- volutional Neural Network</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Network-Arch"><span class="nav-number">2.2.1.</span> <span class="nav-text">Network Arch</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#Feature-Generation-Sub-network"><span class="nav-number">2.2.1.1.</span> <span class="nav-text">Feature Generation Sub-network</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#OFF-Sub-network"><span class="nav-number">2.2.1.2.</span> <span class="nav-text">OFF Sub-network</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Classfiication-Sub-network"><span class="nav-number">2.2.1.3.</span> <span class="nav-text">Classfiication Sub-network</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Two-stage-Training-Strategy"><span class="nav-number">2.2.1.4.</span> <span class="nav-text">Two-stage Training Strategy</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Intermediate-Supervision-during-Training"><span class="nav-number">2.2.1.5.</span> <span class="nav-text">Intermediate Supervision during Training</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Reducinhg-the-Memory-Cost"><span class="nav-number">2.2.1.6.</span> <span class="nav-text">Reducinhg the Memory Cost</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#ignore-the-network-test-and-experiments"><span class="nav-number">2.2.2.</span> <span class="nav-text">ignore the network test and experiments</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="后空翻的咸鱼"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">后空翻的咸鱼</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssxxx1a" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssxxx1a" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/HZ.arthur.418@gmail.com" title="E-Mail → HZ.arthur.418@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">后空翻的咸鱼</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">33k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">30 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'dhmmdNrBORpHakm4st8M2xQu-gzGzoHsz',
+      appKey     : 'ukeGbvWB9PpLvemzUSDIbUan',
+      placeholder: "这里留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

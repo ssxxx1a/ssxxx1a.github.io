@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"colorfulsolitude.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Introduction1、该论文以生物视觉系统的直觉思路，构建了一个的fast。memory-guided 特征提取器，思路为一个特征maintain 提取器来存储当前帧的主要信息，另外一个特征提取器来提取下一帧的gist信息。 2、其中用到的interleaving policy是采用reinforcement learning的方法。 3、72.3FPS 在Pixel 3 phine上，so">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Looking Fast and Slow,Memory-Guided Mobile Video Object Detection">
+<meta property="og:url" content="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/index.html">
+<meta property="og:site_name" content="colorfulsolitude">
+<meta property="og:description" content="Introduction1、该论文以生物视觉系统的直觉思路，构建了一个的fast。memory-guided 特征提取器，思路为一个特征maintain 提取器来存储当前帧的主要信息，另外一个特征提取器来提取下一帧的gist信息。 2、其中用到的interleaving policy是采用reinforcement learning的方法。 3、72.3FPS 在Pixel 3 phine上，so">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/train.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/5.png">
+<meta property="article:published_time" content="2020-03-18T03:00:46.000Z">
+<meta property="article:modified_time" content="2020-04-24T03:31:07.766Z">
+<meta property="article:author" content="后空翻的咸鱼">
+<meta property="article:tag" content="video sequence">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/1.png">
+
+<link rel="canonical" href="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>Looking Fast and Slow,Memory-Guided Mobile Video Object Detection | colorfulsolitude</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">colorfulsolitude</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://colorfulsolitude.cn/2020/03/18/Looking-Fast-and-Slow/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="后空翻的咸鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="colorfulsolitude">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          Looking Fast and Slow,Memory-Guided Mobile Video Object Detection
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-03-18 11:00:46" itemprop="dateCreated datePublished" datetime="2020-03-18T11:00:46+08:00">2020-03-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-24 11:31:07" itemprop="dateModified" datetime="2020-04-24T11:31:07+08:00">2020-04-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/video-analysis/" itemprop="url" rel="index"><span itemprop="name">video analysis</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/03/18/Looking-Fast-and-Slow/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/03/18/Looking-Fast-and-Slow/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>2.4k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>2 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h4 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h4><p>1、该论文以生物视觉系统的直觉思路，构建了一个的fast。memory-guided 特征提取器，思路为一个特征maintain 提取器来存储当前帧的主要信息，另外一个特征提取器来提取下一帧的gist信息。</p>
+<p>2、其中用到的interleaving policy是采用reinforcement learning的方法。</p>
+<p>3、72.3FPS 在Pixel 3 phine上，sota 在Imagenet VID 2015</p>
+<a id="more"></a>
+<h4 id="Related-Work"><a href="#Related-Work" class="headerlink" title="Related Work"></a>Related Work</h4><p>主要分为多个模块：</p>
+<p>1、后处理方法</p>
+<p>将单图像检测扩展到视频的初步工作通常集中在后处理步骤，其中每帧检测被链接在一起形成轨道，并且基于轨道中的其他检测来修改检测置信度。Seq-nms [7]通过动态编程寻找轨迹，增强了较弱预测的可信度。TCNN [14, 15]提供了一个具有光流的管道，用于跨帧传播检测和跟踪算法，以找到用于重新分析的小管道。这些早期方法产生了相当大的性能改进，但没有从根本上改变基础的每帧检测过程，这限制了它们的有效性。</p>
+<p>2、Feature Flow Methods</p>
+<p>(1)卷积神经网络中的中间特征可以直接通过光流在视频帧之间传播</p>
+<p>(2)DFF:稀疏关键帧上进行检测并通过计算光流来在其他帧上执行特征传播就足够了，这实际上需要更少的代价</p>
+<p>(3)FGDA:如果密集计算来进行当前帧的检测并且相邻帧的特征与当前帧扭曲，通过加权平均聚合，则该想法也可用于提高准确度</p>
+<p>这些方法都是基于optical flow的方法</p>
+<p>3、Multi-frame Methods</p>
+<p>提取关键帧的信息进行传播，从而提升精度</p>
+<p>4、Adaptive Keyframe Selection</p>
+<p> 自适应关键帧选择 ：稀疏地处理视频时，选择关键帧的方法有多种。</p>
+<p>作者提出的方法：</p>
+<p>通过利用记忆内存模块中包含的信息来构建可学习的自适应策略，从而形成一个完整合理的检测准则。</p>
+<h4 id="Approach"><a href="#Approach" class="headerlink" title="Approach"></a>Approach</h4><p>1、交错模型（不同特征提取器之间的交错使用）</p>
+<p>2、记忆模块</p>
+<p>修改ConvLSTM，使之有更好的长期依赖和速度优势。</p>
+<p>3、train</p>
+<p>1&gt;预训练LSTM的权重，再训练其分类器。</p>
+<p>2&gt;训练SSD</p>
+<p>4、 Adaptive Interleaving Policy</p>
+<p>我们采用简单的交错策略可以达到具有竞争力的结果，但一个自然的问题是，是否有可能优化交错策略以进一步改善结果。我们提出了一种使用强化学习来学习自适应交错策略的新方法。重要的观察是，为了有效地帮助较小的网络，记忆模块必须包含一些检测置信度，我们可以将其作为交错策略的一部分。因此，我们构建一个策略网络π，它检查LSTM状态并决定下一个将要运行的特征提取器，如图4所示。然后，我们使用Double Q-learning (DDQN)[34]来训练策略网络。</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/1.png" alt></p>
+<p>为了形成强化学习问题，有必要定义动作空间，状态空间和奖励函数。动作空间由m个动作组成，动作a对应于在下一个时间步长运行特征提取器fa。我们将状态表示为：</p>
+<p>为了形成强化学习问题，有必要定义动作空间，状态空间和奖励函数。动作空间由m个动作组成，动作a对应于在下一个时间步长运行特征提取器fa。我们将状态表示为：</p>
+<script type="math/tex; mode=display">
+S=(c_t,h_t,c_t-c_{t-1},h_t-h-t-1,\eta_t)</script><p>其中包括当前LSTM状态 $c_t$ 和 $h_t$  .以及它们在当前步骤发生的变化 $(c_t-c_{t-1}) $ 和 $(h_t-h_{t-1})$ 我们还添加了一个历史动作项η，因此策略网络可以了解其先前的动作，可以避免过度运行f0。历史动作项是一个长度为20的二进制向量。对所有的k，如果f1在k步前运行则η的第k个条目为1，否则为0。</p>
+<p>然后对于该方法，其中有所谓的奖励方式，分为速度奖励与精度奖励。速度奖励只需要其速度达到f1时给出即可，对于精度损失差可以给出的精度奖励为</p>
+<script type="math/tex; mode=display">
+R(a)= \{\begin{array}{ll}\min _{i} L\left(D^{i}\right)-L\left(D^{0}\right) & a=0 \\ \gamma+\min _{i} L\left(D^{i}\right)-L\left(D^{1}\right) & a=1\end{array}</script><p>训练算法如下:</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/train.png" alt></p>
+<p>5、推理优化</p>
+<p><strong>异步推理</strong> 基于关键帧的检测方法的一个问题是它们仅考虑摊销的运行时间。但是，由于这些方法在关键帧上执行大量计算，因此跨帧的延迟极不一致。最坏情况下，这些方法并不比单帧方法快，这限制了它们的实用性。李等人[17]通过并行运行网络来解决语义视频分割中的这个问题。同样，交错框架也自然地建议采用异步推理方法，消除摊销和最坏情况运行时之间的差距，使我们的方法能够在移动设备上实时平滑运行。</p>
+<p>当同步运行交错模型时，每个时间步执行一个特征提取器，因此最大潜在延迟取决于f0。但是，通过在单独的线程中运行特征提取器，可以轻松地并行化此过程，我们称之为异步模式。异步模式下，f1在每一步运行并专门用于检测，而f0每隔τ帧运行一次并在运行完成时更新记忆模块。轻量级特征提取器在每个步骤使用最新的记忆内存，不再需要等待大的特征提取器运行。这在图5中说明。</p>
+<p><strong>量化</strong> 依赖于多个特征提取器而不是光流的另一个好处：标准推理优化方法进行小的改变后就可以应用。特别地，我们证明了我们的交错框架可以使用[13]中的模拟量化训练过程进行量化。Tensorflow [1]量化库在MobileNet和SSDLite层可直接使用。对于LSTM，在[13]的算法1中，在所有数学运算（加法，乘法，sigmoid和ReLU6）后插入伪量化操作。激活后的范围sigmoid固定为[0, 1]，ReLU6为[0, 6]，确保零完全可以表示。我们还确保连接操作的所有输入范围相同，以消除重新缩放的需要（如[13]中A.3所述）。我们最终的量化异步模型在Pixel 3手机上的运行速度为72.3 FPS，是我们未优化模型帧速率的三倍。</p>
+<p><img src="/2020/03/18/Looking-Fast-and-Slow/5.png" style="zoom:50%;"></p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/video-sequence/" rel="tag"># video sequence</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/03/04/MORAN/" rel="prev" title="MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition">
+      <i class="fa fa-chevron-left"></i> MORAN,A Multi-Object Rectified Attention Network for Scene Text Recognition
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/03/22/P3D/" rel="next" title="Learning Spatio-Temporal Representation With Pseudo-3D Residual Networks">
+      Learning Spatio-Temporal Representation With Pseudo-3D Residual Networks <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-4"><a class="nav-link" href="#Introduction"><span class="nav-number">1.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Related-Work"><span class="nav-number">2.</span> <span class="nav-text">Related Work</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Approach"><span class="nav-number">3.</span> <span class="nav-text">Approach</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="后空翻的咸鱼"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">后空翻的咸鱼</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssxxx1a" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssxxx1a" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/HZ.arthur.418@gmail.com" title="E-Mail → HZ.arthur.418@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">后空翻的咸鱼</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">33k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">30 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'dhmmdNrBORpHakm4st8M2xQu-gzGzoHsz',
+      appKey     : 'ukeGbvWB9PpLvemzUSDIbUan',
+      placeholder: "这里留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

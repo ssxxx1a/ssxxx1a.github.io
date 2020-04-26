@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 4.2.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"colorfulsolitude.cn","root":"/","scheme":"Pisces","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":true},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},"path":"search.xml"};
+  </script>
+
+  <meta name="description" content="Abstract自然场景下的文本定位是被认为是文档分析领域中最困难和最有价值的挑战之一。现有的大多数方法都将文本检测和识别作为单独的任务。在这项工作中，我们提出了一个统一的端到端可训练的快速定向文本定位(FOTS)网络，用于同时检测和识别，在两个互补的任务之间共享计算和视觉信息。特别地，RoIRotate被引入来共享定义和识别之间的卷积特征。得益于卷积的权值共享，我们的FOTS与baseline的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="FOTS,Fast Oriented Text Spotting with a Unified Network">
+<meta property="og:url" content="http://colorfulsolitude.cn/2020/02/28/FOTS/index.html">
+<meta property="og:site_name" content="colorfulsolitude">
+<meta property="og:description" content="Abstract自然场景下的文本定位是被认为是文档分析领域中最困难和最有价值的挑战之一。现有的大多数方法都将文本检测和识别作为单独的任务。在这项工作中，我们提出了一个统一的端到端可训练的快速定向文本定位(FOTS)网络，用于同时检测和识别，在两个互补的任务之间共享计算和视觉信息。特别地，RoIRotate被引入来共享定义和识别之间的卷积特征。得益于卷积的权值共享，我们的FOTS与baseline的">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/figure1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/figure2.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/figure3.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/table1.png">
+<meta property="og:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/figure4.png">
+<meta property="article:published_time" content="2020-02-28T01:35:46.000Z">
+<meta property="article:modified_time" content="2020-04-24T03:31:17.954Z">
+<meta property="article:author" content="后空翻的咸鱼">
+<meta property="article:tag" content="end2end ocr">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://colorfulsolitude.cn/2020/02/28/FOTS/figure1.png">
+
+<link rel="canonical" href="http://colorfulsolitude.cn/2020/02/28/FOTS/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+
+  <title>FOTS,Fast Oriented Text Spotting with a Unified Network | colorfulsolitude</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">colorfulsolitude</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a>
+
+  </li>
+        <li class="menu-item menu-item-about">
+
+    <a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a>
+
+  </li>
+        <li class="menu-item menu-item-tags">
+
+    <a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a>
+
+  </li>
+        <li class="menu-item menu-item-categories">
+
+    <a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a>
+
+  </li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup">
+        <div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div id="search-result">
+  <div id="no-result">
+    <i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://colorfulsolitude.cn/2020/02/28/FOTS/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="后空翻的咸鱼">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="colorfulsolitude">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          FOTS,Fast Oriented Text Spotting with a Unified Network
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">发表于</span>
+
+              <time title="创建时间：2020-02-28 09:35:46" itemprop="dateCreated datePublished" datetime="2020-02-28T09:35:46+08:00">2020-02-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">更新于</span>
+                <time title="修改时间：2020-04-24 11:31:17" itemprop="dateModified" datetime="2020-04-24T11:31:17+08:00">2020-04-24</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">分类于</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/ocr/" itemprop="url" rel="index"><span itemprop="name">ocr</span></a>
+                </span>
+            </span>
+
+          
+            <span class="post-meta-item" title="阅读次数" id="busuanzi_container_page_pv" style="display: none;">
+              <span class="post-meta-item-icon">
+                <i class="fa fa-eye"></i>
+              </span>
+              <span class="post-meta-item-text">阅读次数：</span>
+              <span id="busuanzi_value_page_pv"></span>
+            </span>
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine：</span>
+    
+    <a title="valine" href="/2020/02/28/FOTS/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2020/02/28/FOTS/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  <br>
+            <span class="post-meta-item" title="本文字数">
+              <span class="post-meta-item-icon">
+                <i class="far fa-file-word"></i>
+              </span>
+                <span class="post-meta-item-text">本文字数：</span>
+              <span>6.9k</span>
+            </span>
+            <span class="post-meta-item" title="阅读时长">
+              <span class="post-meta-item-icon">
+                <i class="far fa-clock"></i>
+              </span>
+                <span class="post-meta-item-text">阅读时长 &asymp;</span>
+              <span>6 分钟</span>
+            </span>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="Abstract"><a href="#Abstract" class="headerlink" title="Abstract"></a>Abstract</h3><p>自然场景下的文本定位是被认为是文档分析领域中最困难和最有价值的挑战之一。现有的大多数方法都将文本检测和识别作为单独的任务。在这项工作中，我们提出了一个统一的端到端可训练的快速定向文本定位(FOTS)网络，用于同时检测和识别，在两个互补的任务之间共享计算和视觉信息。特别地，RoIRotate被引入来共享定义和识别之间的卷积特征。得益于卷积的权值共享，我们的FOTS与baseline的文本检测网络相比，计算cost更小，并且联合（detection和recognition）训练方法学习了更多的通用特征，使我们的方法比这two-stage方法表现得更好。实验于ICDAR2015，ICDAR2017 MLT和ICDAR2013数据集，表现出的结果是该方法可以得到sota的效果，同时可以作为real-time的系统的模型。最终效果是比ICDAR2015 text spotting task acc高5%，同时有22.6fps的速度。<br><a id="more"></a><br><img src="/2020/02/28/FOTS/figure1.png" alt="figure1"></p>
+<h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>在自然图像中阅读文本，因其在文档分析、场景理解、机器人导航和图像检索等方面的大量实际应用，越来越受到计算机视觉界的关注[49、43、53、44、14、15、34]。 虽然已有的研究在文本检测和文本识别两方面都取得了很大的进展，但由于文本模式的多样性和背景的复杂性，文本识别仍然具有一定的挑战性。</p>
+<p>场景文本阅读中最常见的方法是将场景文本分为文本检测和文本识别两部分，并将其作为两个独立的任务进行处理[20,34]。基于深度学习的方法在这两方面都占主导地位。在文本检测中，通常使用卷积神经网络从场景图像中提取特征图，然后使用不同的解码器对区域进行解码[49,43,53]。而在文本识别中，序列预测网络是在文本区域上逐个进行的[44,14]。这将导致大量的时间开销，特别是对于带有大量文本区域的图像。另一个问题是它忽略了检测和识别过程中视觉线索的相关性。单个检测网络不能由文本识别的标签进行监督，反之亦然。</p>
+<p>在本文中，我们建议同时考虑文本检测和识别。该方法实现了面向文本的快速定位系统(FOTS)。与之前的两阶段文本识别相比，我们的方法通过卷积神经网络学习更多的通用特征，这些特征在文本检测和文本识别之间是共享的，并且这两个任务的监督是互补的。由于特征提取通常花费大部分时间，因此它将计算缩小到单个检测网络，如图1所示。ROIRotate是连接检测和识别的关键，它根据面向检测的边界框从特征图中获得适当的特征。</p>
+<p><img src="/2020/02/28/FOTS/figure2.png" alt="avatar"></p>
+<p>网络结构如figure 2所示，先由<strong>shared convolutions</strong>提取特征。在特征图的基础上，建立基于全卷积网络的面向文本检测分支，预测检测边界框。RoIRotate操作符从特征图中提取与检测结果对应的文本正特征。然后将文本建议特征输入递归神经网络(RNN)Encode和(CTC)decode [9]进行文本识别。由于网络中的所有模块都是可微<strong>（可bp）</strong>的，因此整个系统可以端到端的训练。据我们所知，这是第一个面向文本检测和识别的端到端的可训练框架。我们发现，不需要复杂的后处理和超参数调整，网络可以很容易地进行训练。</p>
+<p>贡献如下：</p>
+<p>1.我们提出了一个端到端的可训练框架，用于快速定向文本定位。通过共享卷积特征，网络可以同时检测和识别文本，同时减少了计算量，提高了实时性。</p>
+<p>2.介绍了一种新的可微算子RoIRotate，用于从卷积特征图中提取面向文本区域。该操作将文本检测和识别统一到一个端到端pipline中。</p>
+<p>3.没有附加的花里胡哨，FOTS在许多文本检测和文本定位基准上显著地超越了最先进的方法，包括ICDAR 2015[26]、ICDAR 2017 MLT[1]和ICDAR 2013[27]。</p>
+<h3 id="Related-work"><a href="#Related-work" class="headerlink" title="Related work"></a>Related work</h3><p>文本定位是计算机视觉和文档分析中的一个活跃课题。在这一节中，我们将简要介绍相关的工作，包括文本检测、文本编码和文本识别方法。</p>
+<h4 id="Text-Detection"><a href="#Text-Detection" class="headerlink" title="Text Detection"></a>Text Detection</h4><p>大多数传统的文本检测方法都将文本视为字符的组合。这些基于字符的方法首先本地化图像中的字符，然后将它们组合为单词或文本行。</p>
+<p>基于滑动窗口的方法[22,28,3,54]和基于连接组件的方法[18,40,2]是传统方法中有代表性的两类。近年来，有许多基于深度学习的方法来直接检测图像中的单词。</p>
+<p>～<strong>pass</strong></p>
+<h4 id="text-recognition"><a href="#text-recognition" class="headerlink" title="text recognition"></a>text recognition</h4><p>一般情况下，场景文本识别目的是从规则crop<strong>（crop出image中的text部分）</strong>但是不定长的text image中decode一个label序列。以前的大多数方法[8,30]捕获单个字符，然后对错误分类的字符进行细化。除了字符级方法外，近年来的文本区域识别方法可分为三类:基于单词分类的方法、基于序列到标签解码的方法和基于序列到序列模型的方法。</p>
+<p>Jaderberg[19]等人提出单词识别问题是一个传统的多类分类任务，有大量的类标签(大约90K个单词)。Su et.al[48] 提出方法是帧文本识别是一个序列标记问题，其中RNN基于HOG特征，采用CTC作为解码器。Shi等人[44]和He等人[14]提出了深度递归模型对max-out CNN特征进行编码，并采用CTC对编码序列进行解码。Fujii等人提出了一种编码器和summarizer网络来生成CTC的输入序列。Lee等人使用基于注意力的序列-序列结构自动聚焦于提取的CNN特征，并隐式学习RNN中包含的字符级语言模型。为了处理不规则输入图像，Shi等人[45]和Liu等人[37]引入空间注意机制，将扭曲的文本区域转换为适合识别的规则姿态。</p>
+<h4 id="text-spotting"><a href="#text-spotting" class="headerlink" title="text spotting"></a>text spotting</h4><p>大多数以前的文本识别方法首先使用文本检测模型生成文本建议，然后使用单独的文本识别模型识别它们。Jaderberg[20]等人首先使用集成模型生成高召回率的整体文本建议，然后使用单词分类器进行单词识别。Gupta等人[10]训练了一个全卷积回归网络用于文本检测，并采用[19]中的单词分类器进行文本识别。Liao等人使用基于SSD[36]的文本检测方法和CRNN[44]的文本识别方法。</p>
+<p>最近，Li等人提出了一种端到端的文本点对点方法，该方法利用受RPN[41]启发的文本建议网络进行文本检测，并利用LSTM的注意机制进行文本识别[38,45,3]。<strong>我们的方法有两个优势相比较于之前的方法</strong>:</p>
+<p>1.我们引入了RoIRotate方法，同时使用不同的文本检测法方法来解决更为复杂的情况，而他们的方法只能解决垂直文本。</p>
+<p>2.该method在效果与速度上都要好得多，特别的，几乎没有cost的步骤保证我们可以允许在于实时系统。在600*800的图像中，运行时间为900ms。</p>
+<h3 id="Methodology"><a href="#Methodology" class="headerlink" title="Methodology"></a>Methodology</h3><p>FOTS是一个端到端的可训练框架，它可以实时地检测和识别自然场景图像中的所有单词。它由四个部分组成:共享卷积、文本检测分支、RoIRotate操作和文本识别分支。</p>
+<h4 id="Overall-Architecture"><a href="#Overall-Architecture" class="headerlink" title="Overall Architecture"></a>Overall Architecture</h4><p>架构如<strong>figure2 figture3</strong>.</p>
+<p><img src="/2020/02/28/FOTS/figure3.png" alt="avator"></p>
+<p>共享网络工作的backbone是resnet-50[12]。受FPN[35]的启发，我们将低层特征映射和高层语义特征映射串联起来。共享卷积产生的特征图的分辨率是输入图像的1/4。文本检测分支使用共享卷积产生的特征输出 dense的逐像素预测。通过detection branch提取的text region proposals 。使用RoIRotate翻转相关共享特征到fixed-height 关系同时保持原有的高宽比。最后，text recognition branch 识别在这些region proposals。 CNN和LSTM被适用于encode 文本序列信息，采用CTC来进行decode。网络结构在<strong>table1</strong> 。</p>
+<p><img src="/2020/02/28/FOTS/table1.png" alt="avator"></p>
+<h4 id="Text-Detection-Branch"><a href="#Text-Detection-Branch" class="headerlink" title="Text Detection Branch"></a>Text Detection Branch</h4><p>受到[53,15]的启发，我们采用全卷积网络作为文本检测器。由于在自然场景图像中有大量的小文本框，所以我们在共享卷积中对原输入图像的1/32到1/4大小的feature maps进行了提升。在提取出共享特征后，一个 卷积层输出密集的每像素单词预测。第一个通道计算每个像素为正样本的概率。与[53]类似，原始文本区域缩小后的像素被认为是postive的。对于每个positive sample，以下4个通道分别预测其到包含该像素的包围盒的顶、底、左、右的距离，最后一个通道预测相关包围盒的方向。最后的检测结果是通过对这些postive sample应用阈值和NMS得到的。</p>
+<p>在我们的实验中，我们观察到许多类似于文字笔画的模式是很难分类的，如栅栏、网格等。我们应用了online hard example mining（OHEM）方法来更好的区分这些patten(和栅栏、网格类似的等与文本样子较为类似的). 该方法将F-measure提升了2%在ICDAR 2015中。detection branch 的loss 由文本分类项和边界框回归项两部分组成。文本分类项可以看做为下采样的score map 中的pixel-wise的分类loss。只有缩小后的原始文本区域被认为是positive area，而边界框与缩小后的文本之间的区域被认为是<strong>“NOT CARE”</strong>的区域，不会对分类造成损失。</p>
+<p><img src="/2020/02/28/FOTS/figure4.png" alt="avator"></p>
+<p>注意这个通过OHEM选择出来的positive elemens在score map标记为 <strong>$\Omega$</strong> ,对应的loss function可以定义为:</p>
+<script type="math/tex; mode=display">
+\begin{aligned} L_{\mathrm{cls}} &=\frac{1}{|\Omega|} \sum_{x \in \Omega} \mathrm{H}\left(p_{x}, p_{x}^{*}\right) =\frac{1}{|\Omega|} \sum_{x \in \Omega}\left(-p_{x}^{*} \log p_{x}-\left(1-p_{x}^{*}\right) \log \left(1-p_{x}\right)\right) \end{aligned} (1)</script><p>其中$|.|$ 是一个集合的元素个数。$\mathrm{H}(p_x, p^<em>_x)$ 代表score map的预测值: $p_x$ 和binary label<strong>(是否有text)</strong>  $p^</em>_x$ 的cross entorpy loss  </p>
+<p>作为回归loss，应用了IoU loss[52] 和rotation nagle loss [53]，其对object的shape scale 和orientation之间的差异都有较好的rebust.</p>
+<script type="math/tex; mode=display">
+L_{\mathrm{reg}}=\frac{1}{|\Omega|} \sum_{x \in \Omega} \operatorname{IoU}(y,x)+\lambda_{\theta}(1-\cos (\theta_x, \theta_x^*))   (2)</script><p>此处的 $\operatorname{IoU}(\mathbf{R}_x, \mathbf{R}_x^<em>)$ 是预测的bbox  $R_x$ 和ground truth $R^</em>_x$ 的IoU loss. 第二项是rotation angle loss， $\theta_x$ 和 $\theta^*_x$ 分别表示预测的orientation和ground truth.设置超参数$\lambda_{\theta}$为10在实验中，因此总的detection loss可以写为</p>
+<script type="math/tex; mode=display">
+L_{\mathrm{detect}}=L_{\mathrm{cls}}+{\lambda_{\mathrm{reg}}L_{\mathrm{reg}}} (3)</script><script type="math/tex; mode=display">
+L_{\mathrm{reg}}=\frac{1}{|\Omega|} \sum_{x \in \Omega} \operatorname{IoU}(\mathbf{R}_x,\mathbf{R}^*_x)</script><p>超参数$\lambda_{reg}$ 平衡两个loss，在实验中设置为1.</p>
+<h4 id="RoIRotate"><a href="#RoIRotate" class="headerlink" title="RoIRotate"></a>RoIRotate</h4><p>RoIRotate对oriented的特征区域进行变换，得到axis-aligned的特征图，如<strong>Figure 4所示</strong>，在这项工作中，我们固定输出高度，并保持长宽比不变，以处理文本长度的变化。相比较于RoI pooling和RoIAlign，RoIRotate 提供一种更为通用的操作，用于提取感兴趣区域的特征。同时我们与RRPN中提出的RRoI池进行了比较。RRoI池通过max-pooling将旋转后的区域转化为固定大小的区域，同时我们使用双线性插值来计算输出的值。该操作避免了RoI与提取的特征之间的不匹配，并且使得输出特征的长度可变，更适合于文本识别。</p>
+<p>该process可以分为两个步骤：</p>
+<p>1.仿射变换参数可通过预测或者text proposals的ground truth的坐标计算。</p>
+<p>2.然后分别对每个区域的共享特征映射进行仿射变换，得到文本区域的正则水平特征映射。</p>
+<p>第一步的公式如下<strong>（做仿射变换的过程，其实就是将斜或者怎不规则的文字区域矫正为规则的，对其坐标做仿射变换）</strong>:</p>
+<script type="math/tex; mode=display">
+t_x=l * \cos \theta-t * \sin \theta-x (4)</script><script type="math/tex; mode=display">
+t_{y}=t * \cos \theta+l * \sin \theta-y(5)</script><script type="math/tex; mode=display">
+s=\frac{h_{t}}{t+b}(6)</script><script type="math/tex; mode=display">
+w_t=s *(l+r)          (7)</script><script type="math/tex; mode=display">
+\begin{aligned} \mathbf{M} &=\left[\begin{array}{ccc}\cos \theta & -\sin \theta & 0 \\ \sin \theta & \cos \theta & 0 \\ 0 & 0 & 1\end{array}\right]\left[\begin{array}{ccc}s & 0 & 0 \\ 0 & s & 0 \\ 0 & 0 & 1\end{array}\right]\left[\begin{array}{ccc}1 & 0 & t_{x} \\ 0 & 1 & t_{y} \\ 0 & 0 & 1\end{array}\right] \\ &=s\left[\begin{array}{ccc}\cos \theta & -\sin \theta & t_{x} \cos \theta-t_{y} \sin \theta \\ \sin \theta & \cos \theta & t_{x} \sin \theta+t_{y} \cos \theta \\ 0 & 0 & \frac{1}{s}\end{array}\right] \end{aligned}(8)</script><p>对应的参数如下 :</p>
+<p>$M$: 仿射变换矩阵，包含旋转，缩放，平移</p>
+<p>$h_t$: 表示仿射变换后特征图的高度，实验中为8</p>
+<p>$w_t$: 表示仿射变换后特征图宽度</p>
+<p>$(x,y)$表示shared feature maps的坐标点</p>
+<p>$(t,b,l,r)$表示特征图中的点距离旋转的框的上下左右的距离</p>
+<p>$\theta$: 表示检测框的旋转角</p>
+<p>有了变换参数，利用仿射变换很容易得到最终的RoI特征:</p>
+<script type="math/tex; mode=display">
+\left(\begin{array}{l}x_{i}^{s} \\ y_{i}^{s} \\ 1\end{array}\right)=\mathbf{M}^{-1}\left(\begin{array}{l}x_{i}^{t} \\ y_{i}^{t} \\ 1\end{array}\right) (9)</script><p>对于$\forall i \in\left[1 \ldots h_{t}\right], \forall j \in\left[1 \ldots w_{t}\right], \forall c \in[1 \ldots C]$有</p>
+<script type="math/tex; mode=display">
+V_{i j}^{c}=\sum_{n}^{h_{s}} \sum_{m}^{w_{s}} U_{n m}^{c} k\left(x_{i j}^{s}-m ; \Phi_{x}\right) k\left(y_{i j}^{s}-n ; \Phi_{y}\right)(10)</script><p>$V^c_{ij}$是location$(i,j)$在c通道的输出值</p>
+<p>$U^c_{nm}$是$(n,m)$在c通道的输入值</p>
+<p>$h_s,w_S$：代表输入的高和宽</p>
+<p>$\Phi_x,\Phi_y$是双线性插值的核$k()$ 的参数</p>
+<p>$k()$其中定义了插值方法，具体为双线性插值。由于文本建议的宽度可能不同，在实践中，我们将特征映射填充到最长的宽度，而忽略了识别损失函数中的填充部分。</p>
+<p>STN[21]采用相似的仿射变换，但通过不同的方法得到变换参数，主要用于图像域，即图像本身的变换。RoIRotate以共享卷积生成的feature map为输入，生成所有text proposals的feature map，高度固定，长宽比不变。</p>
+<p>与目标分类不同，文本识别对检测噪声非常敏感。预测文本区域的一个小错误就可能切断几个字符，不利于网络训练，因此在训练中我们使用了ground truth文本区域而不是预测文本区域。测试时，使用阈值和NMS对预测文本区域进行过滤。在RoIRotate之后，转换后的特征映射被提交给text recognition branch。</p>
+<h4 id="Text-Recogntion-Branch"><a href="#Text-Recogntion-Branch" class="headerlink" title="Text Recogntion Branch"></a>Text Recogntion Branch</h4><p>text recogntion branch目的于使用共享卷积提取以及RoIRotate转换后的region feature来预测文本label。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/end2end-ocr/" rel="tag"># end2end ocr</a>
+          </div>
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/02/25/Capsule-related-resources/" rel="prev" title="Capsule-related_resources">
+      <i class="fa fa-chevron-left"></i> Capsule-related_resources
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/02/29/OFF/" rel="next" title="Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition">
+      Optical Flow Guided Feature: A Fast and Robust Motion Representation for Video Action Recognition <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#Abstract"><span class="nav-number">1.</span> <span class="nav-text">Abstract</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Introduction"><span class="nav-number">2.</span> <span class="nav-text">Introduction</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Related-work"><span class="nav-number">3.</span> <span class="nav-text">Related work</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Text-Detection"><span class="nav-number">3.1.</span> <span class="nav-text">Text Detection</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#text-recognition"><span class="nav-number">3.2.</span> <span class="nav-text">text recognition</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#text-spotting"><span class="nav-number">3.3.</span> <span class="nav-text">text spotting</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#Methodology"><span class="nav-number">4.</span> <span class="nav-text">Methodology</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#Overall-Architecture"><span class="nav-number">4.1.</span> <span class="nav-text">Overall Architecture</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Text-Detection-Branch"><span class="nav-number">4.2.</span> <span class="nav-text">Text Detection Branch</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#RoIRotate"><span class="nav-number">4.3.</span> <span class="nav-text">RoIRotate</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#Text-Recogntion-Branch"><span class="nav-number">4.4.</span> <span class="nav-text">Text Recogntion Branch</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="后空翻的咸鱼"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">后空翻的咸鱼</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">7</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author motion-element">
+      <span class="links-of-author-item">
+        <a href="https://github.com/ssxxx1a" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;ssxxx1a" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/HZ.arthur.418@gmail.com" title="E-Mail → HZ.arthur.418@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">后空翻的咸鱼</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-area"></i>
+    </span>
+    <span title="站点总字数">33k</span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+    <span title="站点阅读时长">30 分钟</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://pisces.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Pisces</a> 强力驱动
+  </div>
+
+        
+<div class="busuanzi-count">
+  <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+    <span class="post-meta-item" id="busuanzi_container_site_uv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-user"></i>
+      </span>
+      <span class="site-uv" title="总访客量">
+        <span id="busuanzi_value_site_uv"></span>
+      </span>
+    </span>
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item" id="busuanzi_container_site_pv" style="display: none;">
+      <span class="post-meta-item-icon">
+        <i class="fa fa-eye"></i>
+      </span>
+      <span class="site-pv" title="总访问量">
+        <span id="busuanzi_value_site_pv"></span>
+      </span>
+    </span>
+</div>
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/pisces.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+      
+
+<script>
+  if (typeof MathJax === 'undefined') {
+    window.MathJax = {
+      loader: {
+        source: {
+          '[tex]/amsCd': '[tex]/amscd',
+          '[tex]/AMScd': '[tex]/amscd'
+        }
+      },
+      tex: {
+        inlineMath: {'[+]': [['$', '$']]},
+        tags: 'ams'
+      },
+      options: {
+        renderActions: {
+          findScript: [10, doc => {
+            document.querySelectorAll('script[type^="math/tex"]').forEach(node => {
+              const display = !!node.type.match(/; *mode=display/);
+              const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display);
+              const text = document.createTextNode('');
+              node.parentNode.replaceChild(text, node);
+              math.start = {node: text, delim: '', n: 0};
+              math.end = {node: text, delim: '', n: 0};
+              doc.math.push(math);
+            });
+          }, '', false],
+          insertedScript: [200, () => {
+            document.querySelectorAll('mjx-container').forEach(node => {
+              let target = node.parentNode;
+              if (target.nodeName.toLowerCase() === 'li') {
+                target.parentNode.classList.add('has-jax');
+              }
+            });
+          }, '', false]
+        }
+      }
+    };
+    (function () {
+      var script = document.createElement('script');
+      script.src = '//cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js';
+      script.defer = true;
+      document.head.appendChild(script);
+    })();
+  } else {
+    MathJax.startup.document.state(0);
+    MathJax.texReset();
+    MathJax.typeset();
+  }
+</script>
+
+    
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'dhmmdNrBORpHakm4st8M2xQu-gzGzoHsz',
+      appKey     : 'ukeGbvWB9PpLvemzUSDIbUan',
+      placeholder: "这里留言",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : '' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
