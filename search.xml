@@ -262,7 +262,7 @@ Var[x_a|x_b]=\Sigma_{aa\cdot b}</script><p>下面利用上边四个量，求解�
         <category>math</category>
       </categories>
       <tags>
-        <tag>Gaussian_distribution</tag>
+        <tag>Statistical machine learning</tag>
       </tags>
   </entry>
   <entry>
@@ -744,6 +744,86 @@ z_i=W_zy_i+x_i</script><p>其中 $y_i$ 为公式1中给出， $+x_i$ 表示残�
       </categories>
       <tags>
         <tag>Video analysis review</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Linear regression</title>
+    <url>/2020/04/26/Linear-regression/</url>
+    <content><![CDATA[<h3 id="Linear-regression"><a href="#Linear-regression" class="headerlink" title="Linear regression"></a>Linear regression</h3><p>假设数据集为：</p>
+<script type="math/tex; mode=display">
+\mathcal{D}=\{(x_1, y_1),(x_2, y_2),\cdots,(x_N, y_N)\}</script><p>后面我们记：</p>
+<script type="math/tex; mode=display">
+X=(x_1,x_2,\cdots,x_N)^T,Y=(y_1,y_2,\cdots,y_N)^T</script><p>线性回归假设：</p>
+<script type="math/tex; mode=display">
+f(w)=w^Tx</script><h4 id="最小二乘法"><a href="#最小二乘法" class="headerlink" title="最小二乘法"></a>最小二乘法</h4><p>直接通过L2来定义其loss:</p>
+<script type="math/tex; mode=display">
+L(w)=\sum_{i=1}^N||w^Tx_i-y_i||_2^2</script><p>即可得:</p>
+<script type="math/tex; mode=display">
+\begin{aligned}L(w)&=(w^Tx_1-y_1,...,w^Tx_N-y_N)\cdot\begin{pmatrix}w^Tx_1-y_1 \\\\ w^Tx_2-y_2 \\\\...\\\\w^Tx_N-yN\end{pmatrix} \\\\&=(w^TX^T-Y^T)\cdot(XW-Y) \\\\&=w^TX^TXw-Y^TXw-w^TX^T \\\\&=w^TX^TXw-2w^TX^TY+Y^TY\end{aligned}</script><p>所以最小化这个 $\hat{w}$ 即是目标:</p>
+<script type="math/tex; mode=display">
+\begin{aligned}\hat{w}=\mathop{argmin}\limits_wL(w)&\longrightarrow\frac{\partial}{\partial w}L(w)=0\nonumber\\&\longrightarrow2X^TX\hat{w}-2X^TY=0\nonumber\\&\longrightarrow \hat{w}=(X^TX)^{-1}X^TY=X^+Y\end{aligned}</script><a id="more"></a>
+<p>此处用到了矩阵分析的矩阵对矩阵求导。</p>
+<p>这个式子中 $(X^TX)^{-1}X^T$ 又被称为伪逆。对于行满秩或者列满秩的 $X$，可以直接求解，但是对于非满秩的样本集合，需要使用奇异值分解（SVD）的方法，对 $X$ 求奇异值分解，得到</p>
+<script type="math/tex; mode=display">
+X=U\Sigma V^T</script><p>于是：</p>
+<script type="math/tex; mode=display">
+X^+=V\Sigma^{-1}U^T</script><p>在几何上，最小二乘法相当于模型（这里就是直线）和试验值的距离的平方求和，假设我们的试验样本张成一个 $p$ 维空间（满秩的情况）：$X=Span(x_1,\cdots,x_N)$，而模型可以写成 $f(w)=X\beta$，也就是 $x_1,\cdots,x_N$ 的某种组合，而最小二乘法就是说希望 $Y$ 和这个模型距离越小越好，于是它们的差应该与这个张成的空间垂直：</p>
+<script type="math/tex; mode=display">
+X^T\cdot(Y-X\beta)=0\longrightarrow\beta=(X^TX)^{-1}X^TY</script><h2 id><a href="#" class="headerlink" title=" "></a> </h2><h4 id="概率视角"><a href="#概率视角" class="headerlink" title="概率视角"></a>概率视角</h4><p>$D={(x_1,y_1),…,(x_N,y_N)} x_i \in \mathbb{R}^p,y_i \in \mathbb{R},i=1,2…N$</p>
+<script type="math/tex; mode=display">
+X=(x_1,x_2,..,x_N)^T=\begin{pmatrix}x_1^T\\\\x_2^T\\\\...\\\\x_N^T\end{pmatrix}=\begin{pmatrix}x_{11}&...&x_{1p}\\\\x_{21}&...&x_{2p}\\\\...\\\\x_{N1}&...&x_{pp}\end{pmatrix}</script><script type="math/tex; mode=display">
+Y=\begin{pmatrix}y_1\\\\y_2\\\\...\\\\y_N\end{pmatrix}</script><p>最小二乘估计:</p>
+<script type="math/tex; mode=display">
+L(w)=\sum_{i=1}^N||w^tx_i-yi||^2_2 \\\hat{w}=argmin_wL(w) \\\hat{w}=(X^TX)^{-1}X^TY</script><p>假设数据分布的噪声服从正态分布：</p>
+<script type="math/tex; mode=display">
+\epsilon \sim N(0,\sigma^2)\\y=f(w)+\epsilon\\f(w)=w^Tx\\y=w^Tx+\epsilon\\y|X;w \sim N(w^Tx,\sigma^2)</script><p>MLE则为:</p>
+<script type="math/tex; mode=display">
+\begin{aligned}L(w)=\log p(Y|X,w)&=\log\prod\limits_{i=1}^Np(y_i|x_i,w)\nonumber\\&=\sum\limits_{i=1}^N\log(\frac{1}{\sqrt{2\pi\sigma}}e^{-\frac{(y_i-w^Tx_i)^2}{2\sigma^2}})\\\mathop{argmax}\limits_wL(w)&=\mathop{argmin}\limits_w\sum\limits_{i=1}^N(y_i-w^Tx_i)^2\end{aligned}</script><p>所以与上面的最小二乘法得到形式一致。</p>
+<h3 id="正则化"><a href="#正则化" class="headerlink" title="正则化"></a>正则化</h3><p>在实际应用时，如果样本容量不远远大于样本的特征维度，很可能造成过拟合，对这种情况，我们有下面三个解决方式：</p>
+<ol>
+<li>加数据</li>
+<li>特征选择（降低特征维度）如 PCA 算法。</li>
+<li>正则化</li>
+</ol>
+<p>正则化一般是在损失函数（如上面介绍的最小二乘损失）上加入正则化项（表示模型的复杂度对模型的惩罚），下面我们介绍一般情况下的两种正则化框架。</p>
+<script type="math/tex; mode=display">
+\begin{aligned}L1&:\mathop{argmin}\limits_wL(w)+\lambda||w||_1,\lambda\gt0\\L2&:\mathop{argmin}\limits_wL(w)+\lambda||w||^2_2,\lambda \gt 0\end{aligned}</script><p>下面对最小二乘误差分别分析这两者的区别。</p>
+<h3 id="L1-Lasso"><a href="#L1-Lasso" class="headerlink" title="L1 Lasso"></a>L1 Lasso</h3><p>L1正则化可以引起稀疏解。</p>
+<p>从最小化损失的角度看，由于 L1 项求导在0附近的左右导数都不是0，因此更容易取到0解。</p>
+<p>从另一个方面看，L1 正则化相当于：</p>
+<script type="math/tex; mode=display">
+\mathop{argmin}\limits_wL(w)\\s.t. ||w||_1\lt C</script><p>我们已经看到平方误差损失函数在 $w$ 空间是一个椭球，因此上式求解就是椭球和 $||w||_1=C$的切点，因此更容易相切在坐标轴上。</p>
+<h3 id="L2-Ridge"><a href="#L2-Ridge" class="headerlink" title="L2 Ridge"></a>L2 Ridge</h3><script type="math/tex; mode=display">
+\begin{aligned}\hat{w}=\mathop{argmin}\limits_wL(w)+\lambda w^Tw&\longrightarrow\frac{\partial}{\partial w}L(w)+2\lambda w=0\nonumber\\&\longrightarrow2X^TX\hat{w}-2X^TY+2\lambda \hat w=0\nonumber\\&\longrightarrow \hat{w}=(X^TX+\lambda \mathbb{I})^{-1}X^TY\end{aligned}</script><p>可以看到，这个正则化参数和前面的 MAP 结果不谋而合。利用2范数进行正则化不仅可以是模型选择 $w$ 较小的参数，同时也避免 $ X^TX$不可逆的问题。</p>
+<h3 id="L2下的线性回归"><a href="#L2下的线性回归" class="headerlink" title="L2下的线性回归"></a>L2下的线性回归</h3><p>$L1=||w|| \ L2=||w||^2=w^Tw$</p>
+<p>与之前一致，可以写出其优化函数：</p>
+<script type="math/tex; mode=display">
+\begin{aligned}J(w)&=\sum_{i=1}^N||w^Tx_i-y_i||^2+\lambda w^Tw \\&=(w^TX^T-Y^T)\cdot(Xw-Y)+\lambda w^Tw\\&=w^T(X^TX+\lambda I)w-2w^TX^TY+Y^TY\end{aligned}</script><p>即求解目标为 $\hat{w}=\mathop{argmin}\limits_wJ(w)$ :</p>
+<script type="math/tex; mode=display">
+\frac{\partial}{\partial w}J(x)=2(X^TX-\lambda I)w-2X^TY=0</script><p>可得:</p>
+<script type="math/tex; mode=display">
+\hat{w}=(X^TX+\lambda I)^{-1}X^TY</script><h3 id="贝叶斯角度"><a href="#贝叶斯角度" class="headerlink" title="贝叶斯角度"></a>贝叶斯角度</h3><h4 id="权重先验也为高斯分布的-MAP"><a href="#权重先验也为高斯分布的-MAP" class="headerlink" title="权重先验也为高斯分布的 MAP"></a>权重先验也为高斯分布的 MAP</h4><p>取先验分布 $w\sim\mathcal{N}(0,\sigma_0^2)$。于是： </p>
+<script type="math/tex; mode=display">
+\begin{aligned}\hat{w}=\mathop{argmax}\limits_wp(w|Y)&=\mathop{argmax}\limits_wp(Y|w)p(w)\nonumber\\&=\mathop{argmax}\limits_w\log p(Y|w)p(w)\nonumber\\&=\mathop{argmax}\limits_w(\log p(Y|w)+\log p(w))\nonumber\\&=\mathop{argmin}\limits_w[(y-w^Tx)^2+\frac{\sigma^2}{\sigma_0^2}w^Tw]\end{aligned}</script><p>这里省略了 $X$，$p(Y)$和 $w$ 没有关系，同时也利用了上面高斯分布的 MLE的结果。</p>
+<p>我们将会看到，超参数 $\sigma_0$的存在和Ridge 正则项可以对应，同样的如果将先验分布取为 Laplace 分布，那么就会得到和 L1 正则类似的结果。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>线性回归模型是最简单的模型，但是麻雀虽小，五脏俱全，在这里，我们利用最小二乘误差得到了闭式解。同时也发现，在噪声为高斯分布的时候，MLE 的解等价于最小二乘误差，而增加了正则项后，最小二乘误差加上 L2 正则项等价于高斯噪声先验下的 MAP解，加上 L1 正则项后，等价于 Laplace 噪声先验。</p>
+<p>传统的机器学习方法或多或少都有线性回归模型的影子：</p>
+<ol>
+<li>线性模型往往不能很好地拟合数据，因此有三种方案克服这一劣势：<ol>
+<li>对特征的维数进行变换，例如多项式回归模型就是在线性特征的基础上加入高次项。</li>
+<li>在线性方程后面加入一个非线性变换，即引入一个非线性的激活函数，典型的有线性分类模型如感知机。</li>
+<li>对于一致的线性系数，我们进行多次变换，这样同一个特征不仅仅被单个系数影响，例如多层感知机（深度前馈网络）。</li>
+</ol>
+</li>
+<li>线性回归在整个样本空间都是线性的，我们修改这个限制，在不同区域引入不同的线性或非线性，例如线性样条回归和决策树模型。</li>
+<li>线性回归中使用了所有的样本，但是对数据预先进行加工学习的效果可能更好（所谓的维数灾难，高维度数据更难学习），例如 PCA 算法和流形学习。</li>
+</ol>
+]]></content>
+      <categories>
+        <category>math</category>
+      </categories>
+      <tags>
+        <tag>Statistical machine learning</tag>
       </tags>
   </entry>
 </search>
